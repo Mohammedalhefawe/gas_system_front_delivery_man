@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:gas_delivery_app/core/extensions/phone_call_extension.dart';
 import 'package:gas_delivery_app/data/enums/loading_state_enum.dart';
 import 'package:gas_delivery_app/data/models/order_model.dart';
 import 'package:gas_delivery_app/presentation/custom_widgets/app_button.dart';
+import 'package:gas_delivery_app/presentation/custom_widgets/normal_app_bar.dart';
 import 'package:gas_delivery_app/presentation/pages/order_details_page/order_details_controller.dart';
 import 'package:gas_delivery_app/presentation/pages/orders_page/orders_page.dart';
 import 'package:gas_delivery_app/presentation/util/date_converter.dart';
@@ -21,15 +23,7 @@ class DriverOrderDetailsPage extends GetView<DriverOrderDetailsController> {
       top: false,
       child: Scaffold(
         backgroundColor: ColorManager.colorGrey0,
-        appBar: AppBar(
-          title: Text('OrderDetails'.tr),
-          backgroundColor: ColorManager.colorWhite,
-          elevation: 0,
-          leading: IconButton(
-            icon: Icon(Icons.arrow_back, color: ColorManager.colorFontPrimary),
-            onPressed: () => Get.back(),
-          ),
-        ),
+        appBar: NormalAppBar(title: 'OrderDetails'.tr, backIcon: true),
         body: Obx(() {
           if (controller.loadingState.value == LoadingState.loading) {
             return _buildShimmerDetails();
@@ -162,9 +156,24 @@ class DriverOrderDetailsPage extends GetView<DriverOrderDetailsController> {
             title: 'OrderInformation'.tr,
             children: [
               _buildInfoRow(
+                Assets.icons.userAccountIcon,
+                'fullName'.tr,
+                order.customer?.fullName ?? "UnknownUser".tr,
+              ),
+              InkWell(
+                onTap: () {
+                  order.customer!.user!.phoneNumber.makePhoneCall();
+                },
+                child: _buildInfoRow(
+                  Assets.icons.mobileIcon,
+                  'numberPhone'.tr,
+                  order.customer?.user!.phoneNumber ?? "UnknownUser".tr,
+                ),
+              ),
+              _buildInfoRow(
                 Assets.icons.motorIcon,
                 'DeliveryType'.tr,
-                order.immediate
+                order.immediate == 1
                     ? 'ImmediateDelivery'.tr
                     : 'ScheduledDelivery'.tr,
               ),
@@ -183,7 +192,7 @@ class DriverOrderDetailsPage extends GetView<DriverOrderDetailsController> {
               _buildInfoRow(
                 Assets.icons.locationIcon,
                 'Address'.tr,
-                order.address.addressName ?? order.address.address,
+                order.address!.addressName ?? order.address!.address,
                 maxLines: 3,
               ),
               _buildInfoRow(
@@ -214,26 +223,35 @@ class DriverOrderDetailsPage extends GetView<DriverOrderDetailsController> {
               _buildInfoRow(
                 Assets.icons.locationPin,
                 'City'.tr,
-                order.address.city,
+                order.address!.city,
               ),
               _buildInfoRow(
                 Assets.icons.locationPin,
                 'Address'.tr,
-                order.address.address,
+                order.address!.address,
                 maxLines: 3,
               ),
-              if (order.address.floorNumber != null)
+              if (order.address?.floorNumber != null)
                 _buildInfoRow(
                   Assets.icons.buildingIcon,
                   'FloorNumber'.tr,
-                  order.address.floorNumber!,
+                  order.address!.floorNumber!,
                 ),
-              if (order.address.details != null)
+              if (order.address?.details != null)
                 _buildInfoRow(
                   Assets.icons.detailsIcon,
                   'Details'.tr,
-                  order.address.details!,
+                  order.address!.details!,
                 ),
+              SizedBox(height: AppSize.s10),
+              AppButton(
+                onPressed: () {
+                  controller.showLocationDialog(context, order.address!);
+                },
+                text: 'OpenMap'.tr,
+                backgroundColor: ColorManager.colorPrimary,
+                fontColor: ColorManager.colorWhite,
+              ),
             ],
           ),
           const SizedBox(height: AppSize.s8),
@@ -332,6 +350,7 @@ class DriverOrderDetailsPage extends GetView<DriverOrderDetailsController> {
                 const SizedBox(height: AppSize.s4),
                 Text(
                   value,
+                  textDirection: TextDirection.ltr,
                   style: TextStyle(
                     fontSize: FontSize.s14,
                     color: ColorManager.colorFontPrimary,
@@ -470,6 +489,17 @@ class DriverOrderDetailsPage extends GetView<DriverOrderDetailsController> {
             fontColor: ColorManager.colorWhite,
           ),
         ),
+      ]);
+    } else if (order.orderStatus == 'accepted') {
+      buttons.addAll([
+        Expanded(
+          child: AppButton(
+            onPressed: () => controller.startOrder(context),
+            text: 'StartDelivery'.tr,
+            backgroundColor: ColorManager.colorPrimary,
+            fontColor: ColorManager.colorWhite,
+          ),
+        ),
         const SizedBox(width: AppSize.s8),
         Expanded(
           child: AppButton(
@@ -481,17 +511,6 @@ class DriverOrderDetailsPage extends GetView<DriverOrderDetailsController> {
           ),
         ),
       ]);
-    } else if (order.orderStatus == 'accepted') {
-      buttons.add(
-        Expanded(
-          child: AppButton(
-            onPressed: () => controller.startOrder(context),
-            text: 'StartDelivery'.tr,
-            backgroundColor: ColorManager.colorPrimary,
-            fontColor: ColorManager.colorWhite,
-          ),
-        ),
-      );
     } else if (order.orderStatus == 'on_the_way') {
       buttons.add(
         Expanded(

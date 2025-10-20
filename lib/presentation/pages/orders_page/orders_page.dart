@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:gas_delivery_app/core/app_config/app_translation.dart';
 import 'package:gas_delivery_app/data/enums/loading_state_enum.dart';
 import 'package:gas_delivery_app/data/models/order_model.dart';
 import 'package:gas_delivery_app/presentation/custom_widgets/app_button.dart';
+import 'package:gas_delivery_app/presentation/pages/order_details_page/order_details_page.dart';
 import 'package:gas_delivery_app/presentation/pages/orders_page/orders_controller.dart';
 import 'package:gas_delivery_app/presentation/util/resources/assets.gen.dart';
 import 'package:gas_delivery_app/presentation/util/resources/color_manager.dart';
@@ -9,24 +11,105 @@ import 'package:gas_delivery_app/presentation/util/resources/values_manager.dart
 import 'package:get/get.dart';
 import 'package:shimmer/shimmer.dart';
 
-class DriverOrdersPage extends GetView<DriverOrdersController> {
+class DriverOrdersPage extends StatefulWidget {
   const DriverOrdersPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    Get.put(DriverOrdersController());
-    return Obx(() {
-      if (controller.loadingState.value == LoadingState.loading) {
-        return _buildShimmerList();
+  State<DriverOrdersPage> createState() => _DriverOrdersPageState();
+}
+
+class _DriverOrdersPageState extends State<DriverOrdersPage>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+  late DriverOrdersController controller;
+
+  @override
+  void initState() {
+    super.initState();
+    controller = Get.put(DriverOrdersController());
+
+    _tabController = TabController(length: 2, vsync: this, initialIndex: 1);
+
+    // Listen to tab changes
+    _tabController.addListener(() {
+      if (_tabController.indexIsChanging) return;
+      controller.currentTab.value = _tabController.index;
+
+      if (_tabController.index == 0) {
+        controller.fetchDriverOrders();
+      } else {
+        controller.fetchNewOrders();
       }
-      if (controller.loadingState.value == LoadingState.doneWithNoData) {
-        return _buildEmptyState();
-      }
-      return _buildOrdersList();
     });
   }
 
-  Widget _buildEmptyState() {
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      top: false,
+      child: Scaffold(
+        appBar: AppBar(
+          backgroundColor: ColorManager.colorBackground,
+          toolbarHeight: 0,
+          bottom: TabBar(
+            controller: _tabController,
+            dividerColor: ColorManager.colorDoveGray100,
+            labelColor: ColorManager.colorPrimary,
+            unselectedLabelColor: ColorManager.colorDoveGray600,
+            indicatorColor: ColorManager.colorPrimary,
+            labelStyle: TextStyle(
+              fontSize: FontSize.s14,
+              fontWeight: FontWeight.w700,
+              fontFamily: AppTranslations.appFontFamily,
+            ),
+            tabs: [
+              Tab(text: 'MyOrders'.tr),
+              Tab(text: 'NewOrders'.tr),
+            ],
+          ),
+        ),
+        body: TabBarView(
+          controller: _tabController,
+          children: [
+            Obx(
+              () => _buildOrdersByState(
+                controller.myOrders,
+                controller.myOrdersLoadingState,
+                'NoDriverOrdersPrompt'.tr,
+              ),
+            ),
+            Obx(
+              () => _buildOrdersByState(
+                controller.newOrders,
+                controller.newOrdersLoadingState,
+                'NoNewOrdersPrompt'.tr,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildOrdersByState(
+    RxList<OrderModel> orders,
+    Rx<LoadingState> state,
+    String emptyPrompt,
+  ) {
+    if (state.value == LoadingState.loading) return _buildShimmerList();
+    if (state.value == LoadingState.doneWithNoData) {
+      return _buildEmptyState(emptyPrompt);
+    }
+    return _buildOrdersList(orders);
+  }
+
+  Widget _buildEmptyState(String prompt) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(AppPadding.p28),
@@ -57,7 +140,7 @@ class DriverOrdersPage extends GetView<DriverOrdersController> {
             ),
             const SizedBox(height: AppSize.s12),
             Text(
-              'NoDriverOrdersPrompt'.tr,
+              prompt,
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: FontSize.s16,
@@ -71,24 +154,26 @@ class DriverOrdersPage extends GetView<DriverOrdersController> {
     );
   }
 
-  Widget _buildOrdersList() {
+  Widget _buildOrdersList(RxList<OrderModel> orders) {
     return Column(
       children: [
         const SizedBox(height: AppSize.s8),
         Expanded(
           child: RefreshIndicator(
-            onRefresh: controller.fetchDriverOrders,
+            onRefresh: () => controller.currentTab.value == 0
+                ? controller.fetchDriverOrders()
+                : controller.fetchNewOrders(),
             color: ColorManager.colorPrimary,
             backgroundColor: ColorManager.colorWhite,
             child: ListView.separated(
               padding: const EdgeInsets.symmetric(horizontal: AppPadding.p16),
-              itemCount: controller.orders.length,
+              itemCount: orders.length,
               itemBuilder: (context, index) {
-                final order = controller.orders[index];
+                final order = orders[index];
                 return Column(
                   children: [
                     _buildOrderCard(context, order),
-                    if (index == controller.orders.length - 1)
+                    if (index == orders.length - 1)
                       const SizedBox(height: AppSize.s8),
                   ],
                 );
@@ -108,9 +193,8 @@ class DriverOrdersPage extends GetView<DriverOrdersController> {
             .toStringAsFixed(0);
 
     return InkWell(
-      onTap: () {
-        // Optional: Navigate to a detailed order view if needed
-      },
+      onTap: () =>
+          Get.to(() => const DriverOrderDetailsPage(), arguments: order),
       borderRadius: BorderRadius.circular(AppSize.s16),
       child: Container(
         decoration: BoxDecoration(
@@ -166,7 +250,7 @@ class DriverOrdersPage extends GetView<DriverOrdersController> {
                 const SizedBox(width: AppSize.s8),
                 Expanded(
                   child: Text(
-                    order.address.addressName ?? order.address.address,
+                    order.address!.addressName!,
                     style: TextStyle(
                       fontSize: FontSize.s14,
                       color: ColorManager.colorDoveGray600,
@@ -178,13 +262,11 @@ class DriverOrdersPage extends GetView<DriverOrdersController> {
               ],
             ),
             const SizedBox(height: AppSize.s16),
-            // Divider
             Container(
               height: 1,
-              color: ColorManager.colorGrey2.withValues(alpha: 0.1),
+              color: ColorManager.colorGrey2.withOpacity(0.1),
             ),
             const SizedBox(height: AppSize.s16),
-            // Price Breakdown
             _buildPriceRow(
               'Subtotal',
               '${double.parse(order.totalAmount).toStringAsFixed(0)} ${'SP'.tr}',
@@ -197,7 +279,6 @@ class DriverOrdersPage extends GetView<DriverOrdersController> {
             const SizedBox(height: AppSize.s8),
             _buildPriceRow('Total', '$totalAmount ${'SP'.tr}', isTotal: true),
             const SizedBox(height: AppSize.s16),
-            // Action Buttons
             _buildActionButtons(context, order),
           ],
         ),
@@ -234,11 +315,22 @@ class DriverOrdersPage extends GetView<DriverOrdersController> {
   Widget _buildActionButtons(BuildContext context, OrderModel order) {
     List<Widget> buttons = [];
     if (order.orderStatus == 'pending') {
-      buttons.addAll([
+      buttons.add(
         Expanded(
           child: AppButton(
             onPressed: () => controller.acceptOrder(context, order.orderId),
             text: 'Accept'.tr,
+            backgroundColor: ColorManager.colorPrimary,
+            fontColor: ColorManager.colorWhite,
+          ),
+        ),
+      );
+    } else if (order.orderStatus == 'accepted') {
+      buttons.addAll([
+        Expanded(
+          child: AppButton(
+            onPressed: () => controller.startOrder(context, order.orderId),
+            text: 'StartDelivery'.tr,
             backgroundColor: ColorManager.colorPrimary,
             fontColor: ColorManager.colorWhite,
           ),
@@ -254,17 +346,6 @@ class DriverOrdersPage extends GetView<DriverOrdersController> {
           ),
         ),
       ]);
-    } else if (order.orderStatus == 'accepted') {
-      buttons.add(
-        Expanded(
-          child: AppButton(
-            onPressed: () => controller.startOrder(context, order.orderId),
-            text: 'StartDelivery'.tr,
-            backgroundColor: ColorManager.colorPrimary,
-            fontColor: ColorManager.colorWhite,
-          ),
-        ),
-      );
     } else if (order.orderStatus == 'on_the_way') {
       buttons.add(
         Expanded(
@@ -288,68 +369,81 @@ class DriverOrdersPage extends GetView<DriverOrdersController> {
         padding: const EdgeInsets.symmetric(horizontal: AppPadding.p16),
         itemCount: 4,
         itemBuilder: (context, index) {
-          return Container(
-            margin: const EdgeInsets.only(bottom: AppSize.s8),
-            padding: const EdgeInsets.all(AppPadding.p20),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(AppSize.s16),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          return Column(
+            children: [
+              if (index == 0) const SizedBox(height: AppSize.s8),
+              Container(
+                margin: const EdgeInsets.only(bottom: AppSize.s8),
+                padding: const EdgeInsets.all(AppPadding.p20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(AppSize.s16),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Container(width: 120, height: 18, color: Colors.white),
-                        const SizedBox(height: AppSize.s6),
-                        Container(width: 80, height: 14, color: Colors.white),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              width: 120,
+                              height: 18,
+                              color: Colors.white,
+                            ),
+                            const SizedBox(height: AppSize.s6),
+                            Container(
+                              width: 80,
+                              height: 14,
+                              color: Colors.white,
+                            ),
+                          ],
+                        ),
+                        Container(width: 70, height: 28, color: Colors.white),
                       ],
                     ),
-                    Container(width: 70, height: 28, color: Colors.white),
+                    const SizedBox(height: AppSize.s16),
+                    Row(
+                      children: [
+                        Container(width: 20, height: 20, color: Colors.white),
+                        const SizedBox(width: AppSize.s8),
+                        Container(width: 200, height: 14, color: Colors.white),
+                      ],
+                    ),
+                    const SizedBox(height: AppSize.s16),
+                    Container(height: 1, color: Colors.white),
+                    const SizedBox(height: AppSize.s16),
+                    Container(
+                      width: double.infinity,
+                      height: 14,
+                      color: Colors.white,
+                    ),
+                    const SizedBox(height: AppSize.s8),
+                    Container(
+                      width: double.infinity,
+                      height: 14,
+                      color: Colors.white,
+                    ),
+                    const SizedBox(height: AppSize.s8),
+                    Container(
+                      width: double.infinity,
+                      height: 14,
+                      color: Colors.white,
+                    ),
+                    const SizedBox(height: AppSize.s16),
+                    Row(
+                      children: [
+                        Container(width: 100, height: 40, color: Colors.white),
+                        const SizedBox(width: AppSize.s8),
+                        Container(width: 100, height: 40, color: Colors.white),
+                      ],
+                    ),
                   ],
                 ),
-                const SizedBox(height: AppSize.s16),
-                Row(
-                  children: [
-                    Container(width: 20, height: 20, color: Colors.white),
-                    const SizedBox(width: AppSize.s8),
-                    Container(width: 200, height: 14, color: Colors.white),
-                  ],
-                ),
-                const SizedBox(height: AppSize.s16),
-                Container(height: 1, color: Colors.white),
-                const SizedBox(height: AppSize.s16),
-                Container(
-                  width: double.infinity,
-                  height: 14,
-                  color: Colors.white,
-                ),
-                const SizedBox(height: AppSize.s8),
-                Container(
-                  width: double.infinity,
-                  height: 14,
-                  color: Colors.white,
-                ),
-                const SizedBox(height: AppSize.s8),
-                Container(
-                  width: double.infinity,
-                  height: 14,
-                  color: Colors.white,
-                ),
-                const SizedBox(height: AppSize.s16),
-                Row(
-                  children: [
-                    Container(width: 100, height: 40, color: Colors.white),
-                    const SizedBox(width: AppSize.s8),
-                    Container(width: 100, height: 40, color: Colors.white),
-                  ],
-                ),
-              ],
-            ),
+              ),
+            ],
           );
         },
       ),
@@ -357,7 +451,7 @@ class DriverOrdersPage extends GetView<DriverOrdersController> {
   }
 }
 
-// Reused from orders_page.dart
+// Reused status badge widget
 Widget buildStatusBadge(String status) {
   final Map<String, Map<String, dynamic>> statusMap = {
     'pending': {'color': ColorManager.colorPrimary, 'icon': Icons.access_time},

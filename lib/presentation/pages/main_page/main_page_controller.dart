@@ -4,9 +4,9 @@ import 'package:get/get.dart';
 import 'package:gas_delivery_app/core/services/cache_service.dart';
 import 'package:gas_delivery_app/data/repos/users_repo.dart';
 
-const homeTabIndex = 0;
-const ordersTabIndex = 1;
-const accountTabIndex = 2;
+// const homeTabIndex = 0;
+const ordersTabIndex = 0;
+const accountTabIndex = 1;
 
 class MainController extends GetxController {
   final UsersRepo usersRepo = Get.find<UsersRepo>();
@@ -14,8 +14,8 @@ class MainController extends GetxController {
   ScrollController scrollController = ScrollController();
   final showNavBar = true.obs;
 
-  PageController pageController = PageController(initialPage: homeTabIndex);
-  final pageIndex = homeTabIndex.obs;
+  PageController pageController = PageController(initialPage: ordersTabIndex);
+  final pageIndex = ordersTabIndex.obs;
 
   void changePage(int newIndex) {
     pageIndex.value = newIndex;

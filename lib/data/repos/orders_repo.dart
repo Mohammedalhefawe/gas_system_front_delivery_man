@@ -30,6 +30,28 @@ class OrderRepo extends GetxService {
     return appResponse;
   }
 
+  Future<AppResponse<List<OrderModel>>> getNewOrders() async {
+    AppResponse<List<OrderModel>> appResponse = AppResponse(success: false);
+
+    try {
+      final response = await apiService.request(
+        url: Api.newOrders,
+        method: Method.get,
+        requiredToken: false,
+        withLogging: true,
+      );
+      appResponse.success = true;
+      appResponse.data = (response.data?['data']?['orders'] as List<dynamic>?)
+          ?.map((e) => OrderModel.fromJson(e as Map<String, dynamic>))
+          .toList();
+      appResponse.successMessage = response.data['message'];
+    } catch (e) {
+      appResponse.success = false;
+      appResponse.networkFailure = ErrorHandler.handle(e).failure;
+    }
+    return appResponse;
+  }
+
   Future<AppResponse<void>> acceptOrder(int orderId) async {
     AppResponse<void> appResponse = AppResponse(success: false);
 

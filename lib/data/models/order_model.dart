@@ -1,6 +1,5 @@
-import 'dart:convert';
-
 import 'package:gas_delivery_app/data/models/address_model.dart';
+import 'package:gas_delivery_app/data/models/customer_model.dart';
 import 'package:gas_delivery_app/data/models/product_model.dart';
 
 class OrderModel {
@@ -17,55 +16,34 @@ class OrderModel {
   final String paymentMethod;
   final String paymentStatus;
   final String? note;
-  final bool immediate;
-  final int? rating;
+  final int immediate;
+  final String? rating;
   final String? review;
   final List<OrderItemModel> items;
-  final AddressModel address;
+  final AddressModel? address;
+  final CustomerModel? customer;
 
   OrderModel({
-    required this.orderId,
-    required this.customerId,
+    this.orderId = 0,
+    this.customerId = 0,
     this.driverId,
-    required this.addressId,
-    required this.totalAmount,
-    required this.deliveryFee,
-    required this.orderStatus,
-    required this.orderDate,
+    this.addressId = 0,
+    this.totalAmount = "",
+    this.deliveryFee = "",
+    this.orderStatus = "",
+    this.orderDate = "",
     this.deliveryDate,
     this.deliveryTime,
-    required this.paymentMethod,
-    required this.paymentStatus,
+    this.paymentMethod = "",
+    this.paymentStatus = "",
     this.note,
-    required this.immediate,
+    this.immediate = 0,
     this.rating,
     this.review,
-    required this.items,
-    required this.address,
+    this.items = const [],
+    this.address,
+    this.customer,
   });
-
-  Map<String, dynamic> toJson() => {
-    'order_id': orderId,
-    'customer_id': customerId,
-    'driver_id': driverId,
-    'address_id': addressId,
-    'total_amount': totalAmount,
-    'delivery_fee': deliveryFee,
-    'order_status': orderStatus,
-    'order_date': orderDate,
-    'delivery_date': deliveryDate,
-    'delivery_time': deliveryTime,
-    'payment_method': paymentMethod,
-    'payment_status': paymentStatus,
-    'note': note,
-    'immediate': immediate ? 1 : 0,
-    'rating': rating,
-    'review': review,
-    'items': items.map((item) => item.toJson()).toList(),
-    'address': address.toJson(),
-  };
-
-  String toRawJson() => json.encode(toJson());
 
   factory OrderModel.fromJson(Map<String, dynamic> json) {
     return OrderModel(
@@ -73,25 +51,51 @@ class OrderModel {
       customerId: json['customer_id'] ?? 0,
       driverId: json['driver_id'],
       addressId: json['address_id'] ?? 0,
-      totalAmount: json['total_amount'] ?? '0',
-      deliveryFee: json['delivery_fee'] ?? '0',
-      orderStatus: json['order_status'] ?? '',
-      orderDate: json['order_date'] ?? '',
+      totalAmount: json['total_amount'] ?? "",
+      deliveryFee: json['delivery_fee'] ?? "",
+      orderStatus: json['order_status'] ?? "",
+      orderDate: json['order_date'] ?? "",
       deliveryDate: json['delivery_date'],
       deliveryTime: json['delivery_time'],
-      paymentMethod: json['payment_method'] ?? '',
-      paymentStatus: json['payment_status'] ?? '',
+      paymentMethod: json['payment_method'] ?? "",
+      paymentStatus: json['payment_status'] ?? "",
       note: json['note'],
-      immediate: json['immediate'] == 1,
+      immediate: json['immediate'] ?? 0,
       rating: json['rating'],
       review: json['review'],
-      items:
-          (json['items'] as List<dynamic>?)
-              ?.map((e) => OrderItemModel.fromJson(e as Map<String, dynamic>))
-              .toList() ??
-          [],
-      address: AddressModel.fromJson(json['address'] ?? {}),
+      items: (json['items'] as List<dynamic>? ?? [])
+          .map((e) => OrderItemModel.fromJson(e))
+          .toList(),
+      address: json['address'] != null
+          ? AddressModel.fromJson(json['address'])
+          : null,
+      customer: json['customer'] != null
+          ? CustomerModel.fromJson(json['customer'])
+          : null,
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'order_id': orderId,
+      'customer_id': customerId,
+      'driver_id': driverId,
+      'address_id': addressId,
+      'total_amount': totalAmount,
+      'delivery_fee': deliveryFee,
+      'order_status': orderStatus,
+      'order_date': orderDate,
+      'delivery_date': deliveryDate,
+      'delivery_time': deliveryTime,
+      'payment_method': paymentMethod,
+      'payment_status': paymentStatus,
+      'note': note,
+      'immediate': immediate,
+      'rating': rating,
+      'review': review,
+      'items': items.map((e) => e.toJson()).toList(),
+      'address': address?.toJson(),
+    };
   }
 
   OrderModel copyWith({
@@ -108,11 +112,12 @@ class OrderModel {
     String? paymentMethod,
     String? paymentStatus,
     String? note,
-    bool? immediate,
-    int? rating,
+    int? immediate,
+    String? rating,
     String? review,
     List<OrderItemModel>? items,
     AddressModel? address,
+    CustomerModel? customer,
   }) {
     return OrderModel(
       orderId: orderId ?? this.orderId,
@@ -133,11 +138,9 @@ class OrderModel {
       review: review ?? this.review,
       items: items ?? this.items,
       address: address ?? this.address,
+      customer: customer ?? this.customer,
     );
   }
-
-  factory OrderModel.fromRawJson(String str) =>
-      OrderModel.fromJson(json.decode(str));
 }
 
 class OrderItemModel {

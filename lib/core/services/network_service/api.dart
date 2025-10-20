@@ -28,6 +28,7 @@ abstract class Api {
   static const String orders = "driver/orders";
   static const String myOrders = "driver/my-orders";
   static const String driverOrders = "driver";
+  static const String newOrders = "orders?status=pending";
 
   ///Delivery Fees
   static const String deliveryFee = "delivery-fee";
