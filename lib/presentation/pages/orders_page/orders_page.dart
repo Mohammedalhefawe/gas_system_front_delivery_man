@@ -5,6 +5,7 @@ import 'package:gas_delivery_app/data/models/order_model.dart';
 import 'package:gas_delivery_app/presentation/custom_widgets/app_button.dart';
 import 'package:gas_delivery_app/presentation/pages/order_details_page/order_details_page.dart';
 import 'package:gas_delivery_app/presentation/pages/orders_page/orders_controller.dart';
+import 'package:gas_delivery_app/presentation/util/date_converter.dart';
 import 'package:gas_delivery_app/presentation/util/resources/assets.gen.dart';
 import 'package:gas_delivery_app/presentation/util/resources/color_manager.dart';
 import 'package:gas_delivery_app/presentation/util/resources/values_manager.dart';
@@ -223,7 +224,10 @@ class _DriverOrdersPageState extends State<DriverOrdersPage>
                       ),
                       const SizedBox(height: AppSize.s4),
                       Text(
-                        order.orderDate,
+                        order.immediate == 1
+                            ? 'ImmediateDelivery'.tr
+                            : "ScheduledDelivery".tr,
+
                         style: TextStyle(
                           fontSize: FontSize.s14,
                           color: ColorManager.colorDoveGray600,
@@ -250,7 +254,7 @@ class _DriverOrdersPageState extends State<DriverOrdersPage>
                 const SizedBox(width: AppSize.s8),
                 Expanded(
                   child: Text(
-                    order.address!.addressName!,
+                    order.address!.address,
                     style: TextStyle(
                       fontSize: FontSize.s14,
                       color: ColorManager.colorDoveGray600,
@@ -261,6 +265,35 @@ class _DriverOrdersPageState extends State<DriverOrdersPage>
                 ),
               ],
             ),
+            if (order.immediate != 1) ...[
+              const SizedBox(height: AppSize.s16),
+              // Address Section
+              Row(
+                children: [
+                  Assets.icons.dateIcon.svg(
+                    width: 20,
+                    height: 20,
+                    colorFilter: ColorFilter.mode(
+                      ColorManager.colorDoveGray600,
+                      BlendMode.srcIn,
+                    ),
+                  ),
+                  const SizedBox(width: AppSize.s8),
+                  Expanded(
+                    child: Text(
+                      "${DateConverter.formatDateOnly(order.deliveryDate!)} ^^ ${DateConverter.formatTimeOnly(order.deliveryTime!)}",
+                      style: TextStyle(
+                        fontSize: FontSize.s14,
+                        color: ColorManager.colorDoveGray600,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+
             const SizedBox(height: AppSize.s16),
             Container(
               height: 1,

@@ -137,7 +137,7 @@ class AccountPage extends GetView<AccountController> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      "user.fullName",
+                      user.fullName,
                       style: TextStyle(
                         fontSize: FontSize.s18,
                         fontWeight: FontWeight.w700,
@@ -219,6 +219,7 @@ class AccountPage extends GetView<AccountController> {
             children: [
               Text(
                 label,
+
                 style: TextStyle(
                   fontSize: FontSize.s12,
                   color: ColorManager.colorDoveGray600,
@@ -228,6 +229,8 @@ class AccountPage extends GetView<AccountController> {
               SizedBox(height: AppSize.s4),
               Text(
                 value,
+                textDirection: TextDirection.ltr,
+
                 style: TextStyle(
                   fontSize: FontSize.s14,
                   color: ColorManager.colorFontPrimary,
@@ -264,13 +267,7 @@ class AccountPage extends GetView<AccountController> {
             onTap: () => controller.showLanguageDialog(Get.context!),
           ),
           _buildDivider(),
-          _buildOptionItem(
-            icon: Assets.icons.locationIcon,
-            text: 'my_addresses'.tr,
-            description: 'ManageYourAddresses'.tr,
-            onTap: () => Get.toNamed(AppRoutes.addressRoute),
-          ),
-          _buildDivider(),
+
           _buildOptionItem(
             icon: Assets.icons.helpIcon,
             text: 'privacy_policy'.tr,

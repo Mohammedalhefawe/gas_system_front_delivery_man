@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:gas_delivery_app/presentation/pages/account_page/account_page.dart';
-import 'package:gas_delivery_app/presentation/pages/cart_page/cart_page_controller.dart';
 import 'package:gas_delivery_app/presentation/pages/orders_page/orders_page.dart';
 import 'package:get/get.dart';
 import 'package:gas_delivery_app/presentation/pages/main_page/main_page_controller.dart';
@@ -8,7 +7,7 @@ import 'package:gas_delivery_app/presentation/util/resources/assets.gen.dart';
 import 'package:gas_delivery_app/presentation/util/resources/color_manager.dart';
 import 'package:gas_delivery_app/presentation/util/resources/navigation_manager.dart';
 import 'package:gas_delivery_app/presentation/util/resources/values_manager.dart';
-import 'package:badges/badges.dart' as badges;
+// import 'package:badges/badges.dart' as badges;
 
 class MainPage extends GetView<MainController> {
   const MainPage({super.key});
@@ -42,8 +41,6 @@ class MainPageAppBar extends GetView<MainController>
 
   @override
   Widget build(BuildContext context) {
-    final cartController = Get.find<CartController>();
-
     return Obx(() {
       int pageIndex = controller.pageIndex.value;
       // if (pageIndex == homeTabIndex) {
@@ -100,23 +97,6 @@ class MainPageAppBar extends GetView<MainController>
           title: Text('orders'.tr, style: Get.textTheme.titleLarge),
 
           actions: [
-            SizedBox(width: AppSize.sWidth * 0.04),
-            InkWell(
-              onTap: () async {
-                Get.toNamed(AppRoutes.cartRoute);
-              },
-              child: badges.Badge(
-                showBadge: cartController.cartItems.isNotEmpty,
-                position: badges.BadgePosition.topStart(),
-                badgeContent: Text(
-                  cartController.cartItems.length.toString(),
-                  style: Get.textTheme.labelSmall!.copyWith(
-                    color: ColorManager.colorWhite,
-                  ),
-                ),
-                child: Assets.icons.cartIcon.svg(width: AppSize.sWidth * 0.07),
-              ),
-            ),
             SizedBox(width: AppSize.sWidth * 0.06),
             InkWell(
               onTap: () async {},

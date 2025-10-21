@@ -3,7 +3,7 @@ import 'dart:convert';
 class UserModel {
   final int userId;
   final String phoneNumber;
-  // final String fullName;
+  final String fullName;
   final String role;
   final bool isVerified;
   final String? createdAt;
@@ -14,14 +14,14 @@ class UserModel {
     required this.phoneNumber,
     required this.role,
     required this.isVerified,
-    // required this.fullName,
+    required this.fullName,
     this.createdAt,
     this.roleInfo,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
-      // fullName: json['role_info']?['full_name'] as String,
+      fullName: json['role_info']?['full_name'] as String,
       userId: json['user_id'] as int,
       phoneNumber: json['phone_number'] as String,
       role: json['role'] as String,
@@ -53,7 +53,7 @@ class UserModel {
   factory UserModel.emptyUser() {
     return UserModel(
       userId: 0,
-      // fullName: '',
+      fullName: '',
       phoneNumber: '',
       role: '',
       isVerified: false,
@@ -62,4 +62,3 @@ class UserModel {
     );
   }
 }
-

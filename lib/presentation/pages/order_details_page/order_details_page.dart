@@ -189,12 +189,7 @@ class DriverOrderDetailsPage extends GetView<DriverOrderDetailsController> {
                   'DeliveryTime'.tr,
                   DateConverter.formatTimeOnly(order.deliveryTime!),
                 ),
-              _buildInfoRow(
-                Assets.icons.locationIcon,
-                'Address'.tr,
-                order.address!.addressName ?? order.address!.address,
-                maxLines: 3,
-              ),
+
               _buildInfoRow(
                 Assets.icons.paymentIcon,
                 'PaymentMethod'.tr,
