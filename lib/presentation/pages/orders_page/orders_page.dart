@@ -121,7 +121,7 @@ class _DriverOrdersPageState extends State<DriverOrdersPage>
               width: AppSize.s120,
               height: AppSize.s120,
               decoration: BoxDecoration(
-                color: ColorManager.colorPrimary.withOpacity(0.1),
+                color: ColorManager.colorPrimary.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(
@@ -297,7 +297,7 @@ class _DriverOrdersPageState extends State<DriverOrdersPage>
             const SizedBox(height: AppSize.s16),
             Container(
               height: 1,
-              color: ColorManager.colorGrey2.withOpacity(0.1),
+              color: ColorManager.colorGrey2.withValues(alpha: 0.1),
             ),
             const SizedBox(height: AppSize.s16),
             _buildPriceRow(
@@ -396,8 +396,8 @@ class _DriverOrdersPageState extends State<DriverOrdersPage>
 
   Widget _buildShimmerList() {
     return Shimmer.fromColors(
-      baseColor: ColorManager.colorGrey2.withOpacity(0.3),
-      highlightColor: ColorManager.colorGrey2.withOpacity(0.1),
+      baseColor: ColorManager.colorGrey2.withValues(alpha: 0.3),
+      highlightColor: ColorManager.colorGrey2.withValues(alpha: 0.1),
       child: ListView.builder(
         padding: const EdgeInsets.symmetric(horizontal: AppPadding.p16),
         itemCount: 4,
@@ -507,9 +507,9 @@ Widget buildStatusBadge(String status) {
       vertical: AppPadding.p8,
     ),
     decoration: BoxDecoration(
-      color: color.withOpacity(0.1),
+      color: color.withValues(alpha: 0.1),
       borderRadius: BorderRadius.circular(AppSize.s20),
-      border: Border.all(color: color.withOpacity(0.3), width: 1),
+      border: Border.all(color: color.withValues(alpha: 0.3), width: 1),
     ),
     child: Row(
       mainAxisSize: MainAxisSize.min,

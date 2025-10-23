@@ -38,7 +38,7 @@ class AccountPage extends GetView<AccountController> {
               width: AppSize.s120,
               height: AppSize.s120,
               decoration: BoxDecoration(
-                color: ColorManager.colorPrimary.withOpacity(0.1),
+                color: ColorManager.colorPrimary.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(
@@ -107,7 +107,7 @@ class AccountPage extends GetView<AccountController> {
         borderRadius: BorderRadius.circular(AppSize.s20),
         boxShadow: [
           BoxShadow(
-            color: ColorManager.colorBlack.withOpacity(0.05),
+            color: ColorManager.colorBlack.withValues(alpha: 0.05),
             blurRadius: 16,
             offset: const Offset(0, 4),
           ),
@@ -152,8 +152,8 @@ class AccountPage extends GetView<AccountController> {
                       ),
                       decoration: BoxDecoration(
                         color: user.isVerified
-                            ? Colors.green.withOpacity(0.1)
-                            : Colors.orange.withOpacity(0.1),
+                            ? Colors.green.withValues(alpha: 0.1)
+                            : Colors.orange.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(AppSize.s12),
                       ),
                       child: Row(
@@ -189,7 +189,10 @@ class AccountPage extends GetView<AccountController> {
           const SizedBox(height: AppSize.s20),
 
           // Divider
-          Container(height: 1, color: ColorManager.colorGrey2.withOpacity(0.3)),
+          Container(
+            height: 1,
+            color: ColorManager.colorGrey2.withValues(alpha: 0.3),
+          ),
 
           const SizedBox(height: AppSize.s16),
 
@@ -252,7 +255,7 @@ class AccountPage extends GetView<AccountController> {
         borderRadius: BorderRadius.circular(AppSize.s20),
         boxShadow: [
           BoxShadow(
-            color: ColorManager.colorBlack.withOpacity(0.05),
+            color: ColorManager.colorBlack.withValues(alpha: 0.05),
             blurRadius: 16,
             offset: const Offset(0, 4),
           ),
@@ -315,8 +318,8 @@ class AccountPage extends GetView<AccountController> {
               height: AppSize.s40,
               decoration: BoxDecoration(
                 color: textColor == Colors.red
-                    ? Colors.red.withOpacity(0.1)
-                    : ColorManager.colorPrimary.withOpacity(0.1),
+                    ? Colors.red.withValues(alpha: 0.1)
+                    : ColorManager.colorPrimary.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: Center(
@@ -371,15 +374,15 @@ class AccountPage extends GetView<AccountController> {
       padding: const EdgeInsets.symmetric(horizontal: AppPadding.p20),
       child: Divider(
         height: 1,
-        color: ColorManager.colorGrey2.withOpacity(0.3),
+        color: ColorManager.colorGrey2.withValues(alpha: 0.3),
       ),
     );
   }
 
   Widget _buildShimmer() {
     return Shimmer.fromColors(
-      baseColor: ColorManager.colorGrey2.withOpacity(0.3),
-      highlightColor: ColorManager.colorGrey2.withOpacity(0.1),
+      baseColor: ColorManager.colorGrey2.withValues(alpha: 0.3),
+      highlightColor: ColorManager.colorGrey2.withValues(alpha: 0.1),
       child: CustomScrollView(
         slivers: [
           SliverToBoxAdapter(
