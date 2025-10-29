@@ -1,281 +1,280 @@
-// import 'dart:convert';
-// import 'dart:io';
-// import 'package:dio/dio.dart' as dio;
-// import 'package:app_set_id/app_set_id.dart';
-// import 'package:firebase_messaging/firebase_messaging.dart';
-// import 'package:flutter/material.dart';
-// import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-// import 'package:get/get.dart';
-// import 'package:gas_delivery_app/core/services/cache_service.dart';
-// import 'package:gas_delivery_app/core/services/deep_link_service.dart';
-// import 'package:gas_delivery_app/core/services/network_service/error_handler.dart';
-// import 'package:gas_delivery_app/core/services/network_service/remote_api_service.dart';
-// import 'package:gas_delivery_app/data/models/app_response.dart';
-// import 'package:gas_delivery_app/data/repos/users_repo.dart';
-// import 'package:gas_delivery_app/core/services/network_service/api.dart';
-// import 'package:gas_delivery_app/data/dto/get_notifications_dto.dart';
-// import 'package:gas_delivery_app/data/models/notification_model.dart';
-// import 'package:gas_delivery_app/data/models/paginated_model.dart';
-// //import 'package:huawei_push/huawei_push.dart' as huawei_push;
+import 'dart:convert';
+import 'dart:io';
+import 'package:dio/dio.dart' as dio;
+import 'package:app_set_id/app_set_id.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:gas_delivery_app/data/models/paginated_model.dart';
+import 'package:gas_delivery_app/presentation/pages/order_details_page/order_details_page.dart';
+import 'package:get/get.dart';
+import 'package:gas_delivery_app/core/services/cache_service.dart';
+import 'package:gas_delivery_app/core/services/network_service/error_handler.dart';
+import 'package:gas_delivery_app/core/services/network_service/remote_api_service.dart';
+import 'package:gas_delivery_app/data/models/app_response.dart';
+import 'package:gas_delivery_app/data/repos/users_repo.dart';
+import 'package:gas_delivery_app/core/services/network_service/api.dart';
+import 'package:gas_delivery_app/data/models/notification_model.dart';
 
-// Future<void> onBackgroundMessageReceived(RemoteMessage message) async {
-//   debugPrint("Title: ${message.notification?.title}");
-//   debugPrint("Body: ${message.notification?.body}");
-//   debugPrint("Payload: ${message.data}");
-// }
+Future<void> onBackgroundMessageReceived(RemoteMessage message) async {
+  debugPrint("Background message: ${message.messageId}");
+  debugPrint("Title: ${message.notification?.title}");
+  debugPrint("Body: ${message.notification?.body}");
+  debugPrint("Payload: ${message.data}");
+}
 
-// class NotificationRepo {
-//   ApiService apiService = Get.find<ApiService>();
-//   CacheService cacheService = Get.find<CacheService>();
-//   UsersRepo usersRepo = Get.find<UsersRepo>();
-//   DeepLinkService deepLinkService = Get.find<DeepLinkService>();
+class NotificationRepo {
+  ApiService apiService = Get.find<ApiService>();
+  CacheService cacheService = Get.find<CacheService>();
+  UsersRepo usersRepo = Get.find<UsersRepo>();
 
-//   final _firebaseMessaging = FirebaseMessaging.instance;
+  final _firebaseMessaging = FirebaseMessaging.instance;
+  final _flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
 
-//   Future<void> initialize() async {
-//     final response = await _firebaseMessaging.requestPermission();
-//     final status = response.authorizationStatus;
-//     final fCMToken = cacheService.getFCMToken();
-//     if (status == AuthorizationStatus.authorized && fCMToken == null) {
-//       final fCMToken = await _firebaseMessaging.getToken();
+  Future<void> initialize() async {
+    final response = await _firebaseMessaging.requestPermission(
+      alert: true,
+      badge: true,
+      sound: true,
+    );
+    final status = response.authorizationStatus;
 
-//       debugPrint("FCM ==========> $fCMToken");
+    if (status == AuthorizationStatus.authorized) {
+      String? fcmToken = cacheService.getFCMToken();
+      if (fcmToken == null) {
+        fcmToken = await _firebaseMessaging.getToken();
+        debugPrint("FCM Token: $fcmToken");
+        if (fcmToken != null) {
+          cacheService.storeFCMToken(fcmToken);
+          await _firebaseMessaging.subscribeToTopic("drivers");
+          print("=====subscribed in drivers=====");
+        }
+      }
 
-//       //Register to all topics
-//       _firebaseMessaging.subscribeToTopic("all");
+      FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+        debugPrint('Foreground message: ${message.data}');
+        if (message.notification != null) {
+          _showLocalizedNotification(message);
+        }
+      });
 
-//       debugPrint("saving fcm in cache");
-//       cacheService.storeFCMToken(fCMToken!);
-//       cacheService.storePushNotification(true);
+      FirebaseMessaging.onBackgroundMessage(onBackgroundMessageReceived);
 
-//       FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-//         debugPrint('Message data: ${message.data}');
+      FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+        handleNotificationClick(message);
+      });
 
-//         if (message.notification != null) {
-//           _showLocalizedNotification(message);
-//         }
-//       });
-//       FirebaseMessaging.onBackgroundMessage(onBackgroundMessageReceived);
-//       FirebaseMessaging.onMessageOpenedApp.listen((event) {
-//         handleNotificationClick(event);
-//       });
+      final terminatedMessage = await _firebaseMessaging.getInitialMessage();
+      if (terminatedMessage != null) {
+        await Future.delayed(const Duration(seconds: 3));
+        handleNotificationClick(terminatedMessage);
+      }
 
-//       debugPrint("${usersRepo.userLoggedIn.value}");
+      if (usersRepo.userLoggedIn.value) {
+        await sendFCMForUser();
+      }
 
-//       if (usersRepo.userLoggedIn.value) {
-//         debugPrint("Sending FCM to server:========");
-//         //sendFCMForUser();
+      await setupLocalNotification();
+    }
+  }
 
-//         //Check if the app opened from FCM
-//         var terminatedMessage = await FirebaseMessaging.instance
-//             .getInitialMessage();
-//         if (terminatedMessage != null) {
-//           await Future.delayed(const Duration(seconds: 3));
-//           handleNotificationClick(terminatedMessage);
-//         }
-//       }
-//       setupLocalNotification();
+  Future<void> setupLocalNotification() async {
+    const androidInitializationSetting = AndroidInitializationSettings(
+      '@mipmap/ic_launcher',
+    );
+    const iosInitializationSetting = DarwinInitializationSettings(
+      requestAlertPermission: true,
+      requestBadgePermission: true,
+      requestSoundPermission: true,
+    );
+    const initSettings = InitializationSettings(
+      android: androidInitializationSetting,
+      iOS: iosInitializationSetting,
+    );
+    await _flutterLocalNotificationsPlugin.initialize(
+      initSettings,
+      onDidReceiveNotificationResponse: handleLocalNotificationClick,
+    );
+  }
 
-//       //setupHuaweiPushKit();
-//     }
-//   }
+  void handleNotificationClick(RemoteMessage message) {
+    print("mohhef......${message.data}");
+    debugPrint("Handling notification click: ${message.data}");
+    final route = message.data['payload_route'] ?? '/notifications';
+    Get.toNamed(route);
+  }
 
-//   /*String pushKitToken = "";
+  void handleLocalNotificationClick(NotificationResponse response) {
+    debugPrint('Local notification clicked with payload: ${response.payload}');
+    if (response.payload != null) {
+      final payload = jsonDecode(response.payload!);
+      Get.to(
+        DriverOrderDetailsPage(),
+        arguments: int.parse(payload['order_id']),
+      );
+    }
+  }
 
-//   void setupHuaweiPushKit() {
-//     huawei_push.Push.getTokenStream.listen((event) {
-//       // This function gets called when we receive the token successfully
-//       pushKitToken = event;
-//       print('Push Token: $pushKitToken');
-//       huawei_push.Push.showToast(event);
-//     }, onError: (error) {
-//       pushKitToken = error;
+  void _showLocalizedNotification(RemoteMessage message) async {
+    final language = cacheService.getLanguage();
+    String title = message.notification?.title ?? "New Notification";
+    String body =
+        message.notification?.body ?? "Cannot show notification content";
 
-//       huawei_push.Push.showToast(error);
-//     });
-//     huawei_push.Push.getToken("");
-//   }*/
+    title = message.data['title_$language'] ?? title;
+    body = message.data['body_$language'] ?? body;
 
-//   void handleNotificationClick(dynamic message) async {
-//     debugPrint("handle notification click");
-//     debugPrint(message);
+    showNotification(title, body, message.data);
+  }
 
-//     String route = message.data['payload_route'];
+  void showNotification(
+    String title,
+    String body,
+    Map<String, dynamic> payload,
+  ) async {
+    const androidPlatformChannelSpecifics = AndroidNotificationDetails(
+      'general_channel',
+      'General Notifications',
+      importance: Importance.max,
+      priority: Priority.high,
+      playSound: true,
+      channelShowBadge: true,
+    );
 
-//     debugPrint("Extracted route: $route");
+    const iOSChannelSpecifics = DarwinNotificationDetails();
+    const platformChannelSpecifics = NotificationDetails(
+      android: androidPlatformChannelSpecifics,
+      iOS: iOSChannelSpecifics,
+    );
 
-//     if ( /*route == null || */ route.isEmpty) {
-//       deepLinkService.handleDeepLink('');
-//       return;
-//     }
-//     deepLinkService.handleDeepLink(route);
-//   }
+    await _flutterLocalNotificationsPlugin.show(
+      0,
+      title,
+      body,
+      platformChannelSpecifics,
+      payload: jsonEncode(payload),
+    );
+  }
 
-//   final _flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
+  Future<AppResponse> sendFCMForUser() async {
+    AppResponse appResponse = AppResponse(success: false);
+    String? fcmToken = cacheService.getFCMToken();
 
-//   Future<void> setupLocalNotification() async {
-//     const androidInitializationSetting = AndroidInitializationSettings(
-//       '@mipmap/launcher_icon',
-//     );
-//     const iosInitializationSetting = DarwinInitializationSettings();
-//     const initSettings = InitializationSettings(
-//       android: androidInitializationSetting,
-//       iOS: iosInitializationSetting,
-//     );
-//     await _flutterLocalNotificationsPlugin.initialize(
-//       initSettings,
-//       onDidReceiveNotificationResponse: handleLocalNotificationClick,
-//     );
-//   }
+    if (fcmToken == null) {
+      fcmToken = await _firebaseMessaging.getToken();
+      debugPrint("FCM Token: $fcmToken");
+      if (fcmToken != null) {
+        cacheService.storeFCMToken(fcmToken);
+      } else {
+        debugPrint("Failed to get FCM token");
+        return appResponse;
+      }
+    }
 
-//   void handleLocalNotificationClick(NotificationResponse response) {
-//     debugPrint('Local notification clicked with payload: ${response.payload}');
-//     if (response.payload == null) {
-//       handleNotificationClick({});
-//       return;
-//     }
-//     handleNotificationClick(response.payload);
-//   }
+    try {
+      String? deviceId = await AppSetId().getIdentifier();
+      String platform = Platform.isAndroid ? "android" : "ios";
 
-//   void _showLocalizedNotification(RemoteMessage message) async {
-//     final language = cacheService.getLanguage();
-//     String title = message.notification?.title ?? "New notification";
-//     String body =
-//         message.notification?.body ?? "Cannot show notification content";
+      Map<String, dynamic> requestData = {
+        "token": fcmToken,
+        "device_id": deviceId ?? "unknown",
+        "platform": platform,
+        "app_version": "1.0.0",
+      };
 
-//     title = message.data['title_$language'];
-//     body = message.data['body_$language'];
+      await apiService.request(
+        url: "notifications/device-tokens",
+        method: Method.post,
+        params: requestData,
+        requiredToken: true,
+      );
+      appResponse.success = true;
+      debugPrint("FCM token sent successfully");
+    } catch (e) {
+      debugPrint("Error sending FCM token: ${e.toString()}");
+      appResponse.networkFailure = ErrorHandler.handle(e).failure;
+    }
+    return appResponse;
+  }
 
-//     showNotification(title, body, message.data);
-//   }
+  Future<AppResponse> removeFCM() async {
+    AppResponse appResponse = AppResponse(success: false);
+    String? fcmToken = cacheService.getFCMToken();
 
-//   void showNotification(String title, String body, var payload) async {
-//     var androidPlatformChannelSpecifics = const AndroidNotificationDetails(
-//       '0',
-//       'general',
-//       importance: Importance.max,
-//       playSound: true,
-//       //sound: AndroidNotificationSound,
-//       showProgress: true,
-//       priority: Priority.high,
-//     );
+    if (fcmToken == null) {
+      debugPrint("No FCM token to remove");
+      appResponse.success = true;
+      return appResponse;
+    }
 
-//     var iOSChannelSpecifics = const DarwinNotificationDetails();
-//     var platformChannelSpecifics = NotificationDetails(
-//       android: androidPlatformChannelSpecifics,
-//       iOS: iOSChannelSpecifics,
-//     );
-//     await _flutterLocalNotificationsPlugin.show(
-//       0,
-//       title,
-//       body,
-//       platformChannelSpecifics,
-//       payload: jsonEncode(payload),
-//     );
-//   }
+    try {
+      Map<String, dynamic> requestData = {"token": fcmToken};
 
-//   Future<AppResponse> sendFCMForUser() async {
-//     AppResponse appResponse = AppResponse(success: false);
-//     String? fcmToken = cacheService.getFCMToken();
+      await apiService.request(
+        url: "notifications/device-tokens",
+        method: Method.delete,
+        params: requestData,
+        requiredToken: true,
+      );
+      appResponse.success = true;
+      cacheService.storeFCMToken(fcmToken);
+      debugPrint("FCM token removed successfully");
+    } catch (e) {
+      debugPrint("Error removing FCM token: ${e.toString()}");
+      appResponse.networkFailure = ErrorHandler.handle(e).failure;
+    }
+    return appResponse;
+  }
 
-//     if (fcmToken == null) {
-//       debugPrint("No FCM token");
-//       fcmToken = await _firebaseMessaging.getToken();
+  Future<AppResponse<PaginatedModel<NotificationModel>>> getNotifications({
+    required int page,
+    int pageSize = 10,
+  }) async {
+    AppResponse<PaginatedModel<NotificationModel>> appResponse = AppResponse(
+      success: false,
+    );
 
-//       debugPrint("FCM ==========> $fcmToken");
+    try {
+      dio.Response response = await apiService.request(
+        url: Api.notifications,
+        method: Method.get,
+        requiredToken: true,
+        withLogging: true,
+        queryParameters: {'page': page, 'per_page': pageSize},
+      );
 
-//       debugPrint("saving fcm in cache");
-//       cacheService.storeFCMToken(fcmToken!);
-//     } else {
-//       debugPrint("FCM token found");
-//     }
+      appResponse.success = true;
+      appResponse.data = PaginatedModel<NotificationModel>.fromJson(
+        response.data ?? {},
+        (e) => NotificationModel.fromJson(e),
+      );
+    } catch (e) {
+      appResponse.success = false;
+      appResponse.networkFailure = ErrorHandler.handle(e).failure;
+    }
 
-//     try {
-//       String? deviceId = await AppSetId().getIdentifier();
-//       String platform = Platform.isAndroid ? "android" : "ios";
+    return appResponse;
+  }
 
-//       Map<String, dynamic> requestData = {
-//         "token": fcmToken,
-//         "device_id": deviceId,
-//         "platform": platform,
-//       };
+  Future<AppResponse> markNotificationAsRead(int notificationId) async {
+    AppResponse appResponse = AppResponse(success: false);
 
-//       try {
-//         await apiService.request(
-//           url: "notifications/device-tokens",
-//           method: Method.post,
-//           params: requestData,
-//           requiredToken: true,
-//         );
-//         appResponse.success = true;
-//         debugPrint("FCM token sent successfully");
-//       } catch (e) {
-//         debugPrint("Error sending FCM token: ${e.toString()}");
-//         appResponse.success = false;
-//         appResponse.networkFailure = ErrorHandler.handle(e).failure;
-//       }
-//     } catch (e) {
-//       print("fhdgsfgdfdsdsf: ${e.toString()}");
-//     }
-//     return appResponse;
-//   }
+    try {
+      await apiService.request(
+        url: "${Api.notifications}/$notificationId/mark-read",
+        method: Method.post,
+        requiredToken: true,
+        withLogging: true,
+      );
 
-//   Future<AppResponse> removeFCM() async {
-//     String? fcmToken = cacheService.getFCMToken();
+      appResponse.success = true;
+      appResponse.successMessage = "Notification marked as read";
+    } catch (e) {
+      appResponse.success = false;
+      appResponse.networkFailure = ErrorHandler.handle(e).failure;
+      debugPrint("Error marking notification as read: ${e.toString()}");
+    }
 
-//     AppResponse appResponse = AppResponse(success: false);
-
-//     if (fcmToken == null) {
-//       debugPrint("No FCM token to remove");
-//       appResponse.success = true;
-//       return appResponse;
-//     }
-
-//     Map<String, dynamic> requestData = {"token": fcmToken};
-
-//     try {
-//       await apiService.request(
-//         url: "notifications/device-tokens",
-//         method: Method.delete,
-//         params: requestData,
-//         requiredToken: true,
-//       );
-//       appResponse.success = true;
-//       debugPrint("FCM token removed successfully");
-//     } catch (e) {
-//       debugPrint("Error removing FCM token: ${e.toString()}");
-//       appResponse.success = false;
-//       appResponse.networkFailure = ErrorHandler.handle(e).failure;
-//     }
-//     return appResponse;
-//   }
-
-//   Future<AppResponse<PaginatedModel<NotificationModel>>> getNotifications(
-//     GetNotificationsDto dto,
-//   ) async {
-//     AppResponse<PaginatedModel<NotificationModel>> appResponse = AppResponse(
-//       success: false,
-//     );
-
-//     try {
-//       dio.Response response = await apiService.request(
-//         url: Api.notifications,
-//         method: Method.get,
-//         requiredToken: true,
-//         withLogging: true,
-//         queryParameters: dto.toQueryParams(),
-//       );
-
-//       appResponse.success = true;
-//       appResponse.data = PaginatedModel<NotificationModel>.fromJson(
-//         response.data,
-//         (json) => NotificationModel.fromJson(json),
-//       );
-//     } catch (e) {
-//       appResponse.success = false;
-//       appResponse.networkFailure = ErrorHandler.handle(e).failure;
-//     }
-
-//     return appResponse;
-//   }
-// }
+    return appResponse;
+  }
+}
