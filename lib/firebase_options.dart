@@ -17,10 +17,7 @@ import 'package:flutter/foundation.dart'
 class DefaultFirebaseOptions {
   static FirebaseOptions get currentPlatform {
     if (kIsWeb) {
-      throw UnsupportedError(
-        'DefaultFirebaseOptions have not been configured for web - '
-        'you can reconfigure this by running the FlutterFire CLI again.',
-      );
+      return web;
     }
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
@@ -49,20 +46,29 @@ class DefaultFirebaseOptions {
     }
   }
 
+  static const FirebaseOptions web = FirebaseOptions(
+    apiKey: 'AIzaSyDf9ZGqdpHtcdD2lHIw-FViYxmH98c7UXk',
+    appId: '1:221008081019:web:d7fe9c42bcd654a0e332de',
+    messagingSenderId: '221008081019',
+    projectId: 'gas-system-1b341',
+    authDomain: 'gas-system-1b341.firebaseapp.com',
+    storageBucket: 'gas-system-1b341.firebasestorage.app',
+  );
+
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyDv5B2NI3LolBOjRjIzHFu_DVZIU75mNjo',
-    appId: '1:131911407685:android:658401934a659652e5ab2c',
-    messagingSenderId: '131911407685',
-    projectId: 'quick-sale-c28f3',
-    storageBucket: 'quick-sale-c28f3.firebasestorage.app',
+    apiKey: 'AIzaSyD0M2Uf0VQ9iAG9plmF_pHX8RITXXCnYs0',
+    appId: '1:221008081019:android:af9c129de88807f2e332de',
+    messagingSenderId: '221008081019',
+    projectId: 'gas-system-1b341',
+    storageBucket: 'gas-system-1b341.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyBLzEPHKZis9kUm2PewXmU01_8HHNdshxU',
-    appId: '1:131911407685:ios:2fa779bcd6abfb6ce5ab2c',
-    messagingSenderId: '131911407685',
-    projectId: 'quick-sale-c28f3',
-    storageBucket: 'quick-sale-c28f3.firebasestorage.app',
-    iosBundleId: 'com.mahairi.quicksale',
+    apiKey: 'AIzaSyBb1qekHMQXngBGB6a4xiX6nFYijvp6hfc',
+    appId: '1:221008081019:ios:77bf831bec2d4b3de332de',
+    messagingSenderId: '221008081019',
+    projectId: 'gas-system-1b341',
+    storageBucket: 'gas-system-1b341.firebasestorage.app',
+    iosBundleId: 'com.example.gasDeliveryApp',
   );
 }

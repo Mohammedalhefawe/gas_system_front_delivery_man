@@ -230,5 +230,10 @@
   "UnknownUser": "مستخدم غير معروف",
   "NewOrders": "طلبات جديدة",
   "NoNewOrdersPrompt": "لا توجد طلبات جديدة متاحة في الوقت الحالي.",
-  "Reject":"رفض"
+  "Reject": "رفض",
+  "Notifications": "الإشعارات",
+  "FailedToLoadNotifications": "فشل تحميل الإشعارات",
+  "NoNotifications": "لا توجد إشعارات",
+  "Yesterday": "أمس",
+  "Today": "اليوم"
 }

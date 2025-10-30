@@ -43,52 +43,7 @@ class MainPageAppBar extends GetView<MainController>
   Widget build(BuildContext context) {
     return Obx(() {
       int pageIndex = controller.pageIndex.value;
-      // if (pageIndex == homeTabIndex) {
-      //   return AppBar(
-      //     backgroundColor: ColorManager.colorBackground,
-      //     elevation: 0,
-      //     automaticallyImplyLeading: false,
-      //     title: Row(
-      //       children: [
-      //         Text('home'.tr, style: Get.textTheme.titleLarge),
-      //         const SizedBox(width: AppSize.s10),
-      //         const Spacer(),
-      //       ],
-      //     ),
-      //     actions: [
-      //       SizedBox(width: AppSize.sWidth * 0.04),
-      //       InkWell(
-      //         onTap: () async {
-      //           Get.toNamed(AppRoutes.cartRoute);
-      //         },
-      //         child: badges.Badge(
-      //           showBadge: cartController.cartItems.isNotEmpty,
-      //           position: badges.BadgePosition.topStart(),
-      //           badgeContent: Text(
-      //             cartController.cartItems.length.toString(),
-      //             style: Get.textTheme.labelSmall!.copyWith(
-      //               color: ColorManager.colorWhite,
-      //             ),
-      //           ),
-      //           child: Assets.icons.cartIcon.svg(width: AppSize.sWidth * 0.07),
-      //         ),
-      //       ),
-      //       SizedBox(width: AppSize.sWidth * 0.06),
-      //       InkWell(
-      //         onTap: () async {
-      //           // if (await controller.usersRepo.checkLoggedInAndShowDialog()) {
-      //           //   Get.toNamed(AppRoutes.notificationsRoute);
-      //           // }
-      //           Get.toNamed(AppRoutes.addressRoute);
-      //         },
-      //         child: Assets.icons.notificationIcon.svg(
-      //           width: AppSize.sWidth * 0.065,
-      //         ),
-      //       ),
-      //       SizedBox(width: AppSize.sWidth * 0.06),
-      //     ],
-      //   );
-      // }
+
       if (pageIndex == ordersTabIndex) {
         return AppBar(
           backgroundColor: ColorManager.colorBackground,
@@ -99,7 +54,9 @@ class MainPageAppBar extends GetView<MainController>
           actions: [
             SizedBox(width: AppSize.sWidth * 0.06),
             InkWell(
-              onTap: () async {},
+              onTap: () async {
+                Get.toNamed(AppRoutes.notificationRoute);
+              },
               child: Assets.icons.notificationIcon.svg(
                 width: AppSize.sWidth * 0.065,
               ),
@@ -114,14 +71,6 @@ class MainPageAppBar extends GetView<MainController>
           elevation: 0,
           automaticallyImplyLeading: false,
           title: Text('account'.tr, style: Get.textTheme.titleLarge),
-          /*title: Row(
-            children: [
-              Text('account'.tr, style: Get.textTheme.titleLarge),
-              const Spacer(),
-              if (controller.cacheService.isLoggedIn()) AccountModeSwitch(),
-              const Spacer(),
-            ],
-          ),*/
           actions: [
             SizedBox(width: AppSize.sWidth * 0.035),
             InkWell(

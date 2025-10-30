@@ -7,11 +7,14 @@ class PhoneNumberFormatter extends TextInputFormatter {
 
   @override
   TextEditingValue formatEditUpdate(
-      TextEditingValue oldValue, TextEditingValue newValue) {
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
     final newText = newValue.text.replaceAll(RegExp(r'\D'), '');
+    // print("newText: $newText");
 
-    if (newText.length > 15) {
-      // Limit the length to 11 digits
+    if (newText.length > 9) {
+      // Limit the length to 9 digits
       return oldValue;
     }
 

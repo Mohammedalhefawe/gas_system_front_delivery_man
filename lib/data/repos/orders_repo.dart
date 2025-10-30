@@ -1,15 +1,46 @@
+import 'package:dio/dio.dart' as dio;
 import 'package:gas_delivery_app/core/services/network_service/api.dart';
 import 'package:gas_delivery_app/core/services/network_service/error_handler.dart';
 import 'package:gas_delivery_app/core/services/network_service/remote_api_service.dart';
 import 'package:gas_delivery_app/data/models/app_response.dart';
 import 'package:gas_delivery_app/data/models/order_model.dart';
+import 'package:gas_delivery_app/data/models/paginated_model.dart';
 import 'package:get/get.dart';
 
 class OrderRepo extends GetxService {
   final ApiService apiService = Get.find<ApiService>();
 
-  Future<AppResponse<List<OrderModel>>> getOrders() async {
-    AppResponse<List<OrderModel>> appResponse = AppResponse(success: false);
+  Future<AppResponse<OrderModel>> getOrderById(int orderId) async {
+    AppResponse<OrderModel> appResponse = AppResponse(success: false);
+
+    try {
+      final response = await apiService.request(
+        url: '${Api.orders}/$orderId',
+        method: Method.get,
+        requiredToken: true,
+        withLogging: true,
+      );
+
+      appResponse.success = true;
+      appResponse.data = OrderModel.fromJson(
+        response.data?['data']?['order'] ?? {},
+      );
+      appResponse.successMessage = response.data['message'];
+    } catch (e) {
+      appResponse.success = false;
+      appResponse.networkFailure = ErrorHandler.handle(e).failure;
+    }
+
+    return appResponse;
+  }
+
+  Future<AppResponse<PaginatedModel<OrderModel>>> getOrders({
+    required int page,
+    int pageSize = 10,
+  }) async {
+    AppResponse<PaginatedModel<OrderModel>> appResponse = AppResponse(
+      success: false,
+    );
 
     try {
       final response = await apiService.request(
@@ -17,11 +48,13 @@ class OrderRepo extends GetxService {
         method: Method.get,
         requiredToken: true,
         withLogging: true,
+        queryParameters: {'page': page, 'per_page': pageSize},
       );
       appResponse.success = true;
-      appResponse.data = (response.data?['data']?['orders'] as List<dynamic>?)
-          ?.map((e) => OrderModel.fromJson(e as Map<String, dynamic>))
-          .toList();
+      appResponse.data = PaginatedModel<OrderModel>.fromJson(
+        response.data ?? {},
+        (e) => OrderModel.fromJson(e),
+      );
       appResponse.successMessage = response.data['message'];
     } catch (e) {
       appResponse.success = false;
@@ -30,8 +63,13 @@ class OrderRepo extends GetxService {
     return appResponse;
   }
 
-  Future<AppResponse<List<OrderModel>>> getNewOrders() async {
-    AppResponse<List<OrderModel>> appResponse = AppResponse(success: false);
+  Future<AppResponse<PaginatedModel<OrderModel>>> getNewOrders({
+    required int page,
+    int pageSize = 10,
+  }) async {
+    AppResponse<PaginatedModel<OrderModel>> appResponse = AppResponse(
+      success: false,
+    );
 
     try {
       final response = await apiService.request(
@@ -39,11 +77,13 @@ class OrderRepo extends GetxService {
         method: Method.get,
         requiredToken: false,
         withLogging: true,
+        queryParameters: {'page': page, 'per_page': pageSize},
       );
       appResponse.success = true;
-      appResponse.data = (response.data?['data']?['orders'] as List<dynamic>?)
-          ?.map((e) => OrderModel.fromJson(e as Map<String, dynamic>))
-          .toList();
+      appResponse.data = PaginatedModel<OrderModel>.fromJson(
+        response.data ?? {},
+        (e) => OrderModel.fromJson(e),
+      );
       appResponse.successMessage = response.data['message'];
     } catch (e) {
       appResponse.success = false;

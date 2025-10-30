@@ -5,15 +5,31 @@ import 'package:intl/intl.dart';
 
 class DateConverter {
   static DateTime? stringToDate(String? dateString, {String? format}) {
-    if (dateString == null) {
-      return null;
-    }
+    if (dateString == null) return null;
 
-    DateTime utcTime = DateFormat(
-      format ?? "yyyy-MM-ddTHH:mm:ss",
-    ).parse(dateString, true);
-    DateTime localTime = utcTime.toLocal();
-    return localTime;
+    try {
+      // نحاول نقرأ التاريخ الكامل
+      DateTime utcTime = DateFormat(
+        format ?? "yyyy-MM-ddTHH:mm:ss",
+      ).parse(dateString, true);
+      return utcTime.toLocal();
+    } catch (_) {
+      try {
+        // إذا فيها وقت فقط، نضيف تاريخ افتراضي اليوم
+        DateTime timeOnly = DateFormat("HH:mm:ss").parse(dateString);
+        DateTime now = DateTime.now();
+        return DateTime(
+          now.year,
+          now.month,
+          now.day,
+          timeOnly.hour,
+          timeOnly.minute,
+          timeOnly.second,
+        );
+      } catch (_) {
+        return null; // صيغة غير صالحة
+      }
+    }
   }
 
   static String formatTimeOnly(String serverString) {
@@ -21,11 +37,11 @@ class DateConverter {
 
     try {
       // إذا فيها تاريخ + وقت
-      dateTime = DateFormat("yyyy-MM-dd HH:mm:ss").parse(serverString);
+      dateTime = DateFormat("yyyy-MM-dd HH:mm").parse(serverString);
     } catch (e) {
       try {
         // إذا فيها وقت فقط
-        dateTime = DateFormat("HH:mm:ss").parse(serverString);
+        dateTime = DateFormat("HH:mm").parse(serverString);
       } catch (e) {
         // غير صالح، نرجع نفس الـString بدون تعديل
         return serverString;
@@ -38,7 +54,7 @@ class DateConverter {
   }
 
   static String formatDateOnly(String dateTimeString) {
-    DateTime dateTime = DateFormat("yyyy-MM-dd HH:mm:ss").parse(dateTimeString);
+    DateTime dateTime = DateFormat("yyyy-MM-dd HH:mm").parse(dateTimeString);
     return DateFormat("yyyy-MM-dd").format(dateTime);
   }
 

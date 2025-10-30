@@ -19,8 +19,25 @@ class DriverOrderDetailsController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    order.value = Get.arguments;
-    orderId = order.value!.orderId;
+    // order.value = Get.arguments;
+    // orderId = order.value!.orderId;
+    orderId = Get.arguments;
+    fetchOrderDetails();
+  }
+
+  Future<void> fetchOrderDetails() async {
+    loadingState.value = LoadingState.loading;
+    final response = await orderRepo.getOrderById(orderId);
+    if (!response.success) {
+      loadingState.value = LoadingState.hasError;
+      CustomToasts(
+        message: response.getErrorMessage(),
+        type: CustomToastType.error,
+      ).show();
+      return;
+    }
+    order.value = response.data!;
+    loadingState.value = LoadingState.doneWithData;
   }
 
   Future<void> acceptOrder(BuildContext context) async {

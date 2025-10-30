@@ -24,7 +24,6 @@ abstract class Api {
   static const String productReviews = "product-reviews";
 
   ///Orders
-
   static const String orders = "driver/orders";
   static const String myOrders = "driver/my-orders";
   static const String driverOrders = "driver";
@@ -32,4 +31,7 @@ abstract class Api {
 
   ///Delivery Fees
   static const String deliveryFee = "delivery-fee";
+
+  ///notifications
+  static const String notifications = "notifications";
 }

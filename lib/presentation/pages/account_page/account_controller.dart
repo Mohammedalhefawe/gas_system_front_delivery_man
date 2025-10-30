@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:gas_delivery_app/core/app_config/app_translation.dart';
 import 'package:gas_delivery_app/data/enums/loading_state_enum.dart';
 import 'package:gas_delivery_app/data/models/user_model.dart';
+import 'package:gas_delivery_app/data/repos/notification_repo.dart';
 import 'package:gas_delivery_app/data/repos/users_repo.dart';
 import 'package:gas_delivery_app/presentation/custom_widgets/custom_toasts.dart';
 import 'package:gas_delivery_app/presentation/util/resources/color_manager.dart';
@@ -11,6 +12,8 @@ import 'package:get/get.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class AccountController extends GetxController {
+  NotificationRepo notificationRepo = Get.find<NotificationRepo>();
+
   final UsersRepo userRepo = Get.find<UsersRepo>();
   final user = Rxn<UserModel>();
   final loadingState = LoadingState.idle.obs;
@@ -138,6 +141,7 @@ class AccountController extends GetxController {
       return;
     }
     user.value = null;
+    await notificationRepo.removeFCM();
     loadingState.value = LoadingState.doneWithNoData;
     CustomToasts(message: 'LoggedOut'.tr, type: CustomToastType.success).show();
     Get.offAllNamed(AppRoutes.loginRoute);

@@ -1,4 +1,5 @@
 import 'package:gas_delivery_app/data/repos/delivery_fee_repo.dart';
+import 'package:gas_delivery_app/data/repos/notification_repo.dart';
 import 'package:gas_delivery_app/data/repos/orders_repo.dart';
 import 'package:gas_delivery_app/data/repos/users_repo.dart';
 import 'package:get/get.dart';
@@ -16,5 +17,6 @@ class AppBinding extends Bindings {
     Get.put(PermissionService());
     Get.put(DeliveryFeeRepo());
     Get.put(OrderRepo());
+    Get.put(NotificationRepo()..initialize());
   }
 }

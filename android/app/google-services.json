@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "221008081019",
+    "project_id": "gas-system-1b341",
+    "storage_bucket": "gas-system-1b341.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:221008081019:android:af9c129de88807f2e332de",
+        "android_client_info": {
+          "package_name": "com.example.gas_delivery_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD0M2Uf0VQ9iAG9plmF_pHX8RITXXCnYs0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:221008081019:android:c9173a5e6d78998ce332de",
+        "android_client_info": {
+          "package_name": "com.example.gas_delivery_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD0M2Uf0VQ9iAG9plmF_pHX8RITXXCnYs0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

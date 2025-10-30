@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import 'package:lottie/lottie.dart';
 import 'package:gas_delivery_app/data/repos/users_repo.dart';
 import 'package:gas_delivery_app/presentation/util/resources/navigation_manager.dart';
+import 'package:get/get.dart';
+import 'package:lottie/lottie.dart';
 
 class SplashPageController extends GetxController
     with GetSingleTickerProviderStateMixin {
   UsersRepo usersRepo = Get.find<UsersRepo>();
+
   // DeepLinkService deepLinkService = Get.find<DeepLinkService>();
 
   late AnimationController animationController;
@@ -24,12 +25,16 @@ class SplashPageController extends GetxController
   @override
   void onInit() {
     animationController = AnimationController(vsync: this);
-    // usersRepo.checkUserLoggedInState();
+    usersRepo.checkUserLoggedInState();
     super.onInit();
   }
 
   Future<void> openNextPage() async {
-    Get.offAllNamed(AppRoutes.loginRoute);
+    if (usersRepo.userLoggedIn.value == true) {
+      Get.offAllNamed(AppRoutes.mainRoute);
+    } else {
+      Get.offAllNamed(AppRoutes.loginRoute);
+    }
   }
 
   @override

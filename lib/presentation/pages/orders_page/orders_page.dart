@@ -31,16 +31,9 @@ class _DriverOrdersPageState extends State<DriverOrdersPage>
 
     _tabController = TabController(length: 2, vsync: this, initialIndex: 1);
 
-    // Listen to tab changes
     _tabController.addListener(() {
       if (_tabController.indexIsChanging) return;
       controller.currentTab.value = _tabController.index;
-
-      if (_tabController.index == 0) {
-        controller.fetchDriverOrders();
-      } else {
-        controller.fetchNewOrders();
-      }
     });
   }
 
@@ -82,6 +75,8 @@ class _DriverOrdersPageState extends State<DriverOrdersPage>
               () => _buildOrdersByState(
                 controller.myOrders,
                 controller.myOrdersLoadingState,
+                controller.myOrdersLoadingMoreState,
+                controller.myOrdersScrollController,
                 'NoDriverOrdersPrompt'.tr,
               ),
             ),
@@ -89,6 +84,8 @@ class _DriverOrdersPageState extends State<DriverOrdersPage>
               () => _buildOrdersByState(
                 controller.newOrders,
                 controller.newOrdersLoadingState,
+                controller.newOrdersLoadingMoreState,
+                controller.newOrdersScrollController,
                 'NoNewOrdersPrompt'.tr,
               ),
             ),
@@ -101,13 +98,15 @@ class _DriverOrdersPageState extends State<DriverOrdersPage>
   Widget _buildOrdersByState(
     RxList<OrderModel> orders,
     Rx<LoadingState> state,
+    Rx<LoadingState> loadingMoreState,
+    ScrollController scrollController,
     String emptyPrompt,
   ) {
     if (state.value == LoadingState.loading) return _buildShimmerList();
     if (state.value == LoadingState.doneWithNoData) {
       return _buildEmptyState(emptyPrompt);
     }
-    return _buildOrdersList(orders);
+    return _buildOrdersList(orders, loadingMoreState, scrollController);
   }
 
   Widget _buildEmptyState(String prompt) {
@@ -155,32 +154,47 @@ class _DriverOrdersPageState extends State<DriverOrdersPage>
     );
   }
 
-  Widget _buildOrdersList(RxList<OrderModel> orders) {
+  Widget _buildOrdersList(
+    RxList<OrderModel> orders,
+    Rx<LoadingState> loadingMoreState,
+    ScrollController scrollController,
+  ) {
     return Column(
       children: [
         const SizedBox(height: AppSize.s8),
         Expanded(
           child: RefreshIndicator(
-            onRefresh: () => controller.currentTab.value == 0
-                ? controller.fetchDriverOrders()
-                : controller.fetchNewOrders(),
+            onRefresh: () => controller.refreshOrders(),
             color: ColorManager.colorPrimary,
             backgroundColor: ColorManager.colorWhite,
-            child: ListView.separated(
-              padding: const EdgeInsets.symmetric(horizontal: AppPadding.p16),
-              itemCount: orders.length,
-              itemBuilder: (context, index) {
-                final order = orders[index];
-                return Column(
-                  children: [
-                    _buildOrderCard(context, order),
-                    if (index == orders.length - 1)
+            child: CustomScrollView(
+              controller: scrollController,
+              slivers: [
+                SliverList.separated(
+                  itemCount: orders.length,
+                  itemBuilder: (context, index) {
+                    final order = orders[index];
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppPadding.p12,
+                      ),
+                      child: _buildOrderCard(context, order),
+                    );
+                  },
+                  separatorBuilder: (context, index) =>
                       const SizedBox(height: AppSize.s8),
-                  ],
-                );
-              },
-              separatorBuilder: (context, index) =>
-                  const SizedBox(height: AppSize.s8),
+                ),
+                if (loadingMoreState.value == LoadingState.loading)
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: AppSize.s10,
+                      ),
+                      child: Center(child: CircularProgressIndicator()),
+                    ),
+                  ),
+                SliverToBoxAdapter(child: SizedBox(height: AppSize.s8)),
+              ],
             ),
           ),
         ),
@@ -194,8 +208,10 @@ class _DriverOrdersPageState extends State<DriverOrdersPage>
             .toStringAsFixed(0);
 
     return InkWell(
-      onTap: () =>
-          Get.to(() => const DriverOrderDetailsPage(), arguments: order),
+      onTap: () => Get.to(
+        () => const DriverOrderDetailsPage(),
+        arguments: order.orderId,
+      ),
       borderRadius: BorderRadius.circular(AppSize.s16),
       child: Container(
         decoration: BoxDecoration(
@@ -206,7 +222,6 @@ class _DriverOrdersPageState extends State<DriverOrdersPage>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header Row
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -227,7 +242,6 @@ class _DriverOrdersPageState extends State<DriverOrdersPage>
                         order.immediate == 1
                             ? 'ImmediateDelivery'.tr
                             : "ScheduledDelivery".tr,
-
                         style: TextStyle(
                           fontSize: FontSize.s14,
                           color: ColorManager.colorDoveGray600,
@@ -240,7 +254,6 @@ class _DriverOrdersPageState extends State<DriverOrdersPage>
               ],
             ),
             const SizedBox(height: AppSize.s16),
-            // Address Section
             Row(
               children: [
                 Assets.icons.locationIcon.svg(
@@ -267,7 +280,6 @@ class _DriverOrdersPageState extends State<DriverOrdersPage>
             ),
             if (order.immediate != 1) ...[
               const SizedBox(height: AppSize.s16),
-              // Address Section
               Row(
                 children: [
                   Assets.icons.dateIcon.svg(
@@ -293,7 +305,6 @@ class _DriverOrdersPageState extends State<DriverOrdersPage>
                 ],
               ),
             ],
-
             const SizedBox(height: AppSize.s16),
             Container(
               height: 1,
@@ -398,87 +409,114 @@ class _DriverOrdersPageState extends State<DriverOrdersPage>
     return Shimmer.fromColors(
       baseColor: ColorManager.colorGrey2.withValues(alpha: 0.3),
       highlightColor: ColorManager.colorGrey2.withValues(alpha: 0.1),
-      child: ListView.builder(
-        padding: const EdgeInsets.symmetric(horizontal: AppPadding.p16),
-        itemCount: 4,
-        itemBuilder: (context, index) {
-          return Column(
-            children: [
-              if (index == 0) const SizedBox(height: AppSize.s8),
-              Container(
-                margin: const EdgeInsets.only(bottom: AppSize.s8),
-                padding: const EdgeInsets.all(AppPadding.p20),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(AppSize.s16),
+      child: CustomScrollView(
+        slivers: [
+          SliverToBoxAdapter(child: SizedBox(height: AppSize.s8)),
+          SliverList.separated(
+            itemCount: 4,
+            itemBuilder: (context, index) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppPadding.p12),
+                child: Container(
+                  padding: const EdgeInsets.all(AppPadding.p20),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(AppSize.s16),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Container(
+                                width: 120,
+                                height: 18,
+                                color: Colors.white,
+                              ),
+                              const SizedBox(height: AppSize.s6),
+                              Container(
+                                width: 80,
+                                height: 14,
+                                color: Colors.white,
+                              ),
+                            ],
+                          ),
+                          Container(width: 70, height: 28, color: Colors.white),
+                        ],
+                      ),
+                      const SizedBox(height: AppSize.s16),
+                      Row(
+                        children: [
+                          Container(width: 20, height: 20, color: Colors.white),
+                          const SizedBox(width: AppSize.s8),
+                          Container(
+                            width: 200,
+                            height: 14,
+                            color: Colors.white,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: AppSize.s16),
+                      Row(
+                        children: [
+                          Container(width: 20, height: 20, color: Colors.white),
+                          const SizedBox(width: AppSize.s8),
+                          Container(
+                            width: 200,
+                            height: 14,
+                            color: Colors.white,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: AppSize.s16),
+                      Container(height: 1, color: Colors.white),
+                      const SizedBox(height: AppSize.s16),
+                      Container(
+                        width: double.infinity,
+                        height: 14,
+                        color: Colors.white,
+                      ),
+                      const SizedBox(height: AppSize.s8),
+                      Container(
+                        width: double.infinity,
+                        height: 14,
+                        color: Colors.white,
+                      ),
+                      const SizedBox(height: AppSize.s8),
+                      Container(
+                        width: double.infinity,
+                        height: 14,
+                        color: Colors.white,
+                      ),
+                      const SizedBox(height: AppSize.s16),
+                      Row(
+                        children: [
+                          Container(
+                            width: 100,
+                            height: 40,
+                            color: Colors.white,
+                          ),
+                          const SizedBox(width: AppSize.s8),
+                          Container(
+                            width: 100,
+                            height: 40,
+                            color: Colors.white,
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Container(
-                              width: 120,
-                              height: 18,
-                              color: Colors.white,
-                            ),
-                            const SizedBox(height: AppSize.s6),
-                            Container(
-                              width: 80,
-                              height: 14,
-                              color: Colors.white,
-                            ),
-                          ],
-                        ),
-                        Container(width: 70, height: 28, color: Colors.white),
-                      ],
-                    ),
-                    const SizedBox(height: AppSize.s16),
-                    Row(
-                      children: [
-                        Container(width: 20, height: 20, color: Colors.white),
-                        const SizedBox(width: AppSize.s8),
-                        Container(width: 200, height: 14, color: Colors.white),
-                      ],
-                    ),
-                    const SizedBox(height: AppSize.s16),
-                    Container(height: 1, color: Colors.white),
-                    const SizedBox(height: AppSize.s16),
-                    Container(
-                      width: double.infinity,
-                      height: 14,
-                      color: Colors.white,
-                    ),
-                    const SizedBox(height: AppSize.s8),
-                    Container(
-                      width: double.infinity,
-                      height: 14,
-                      color: Colors.white,
-                    ),
-                    const SizedBox(height: AppSize.s8),
-                    Container(
-                      width: double.infinity,
-                      height: 14,
-                      color: Colors.white,
-                    ),
-                    const SizedBox(height: AppSize.s16),
-                    Row(
-                      children: [
-                        Container(width: 100, height: 40, color: Colors.white),
-                        const SizedBox(width: AppSize.s8),
-                        Container(width: 100, height: 40, color: Colors.white),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          );
-        },
+              );
+            },
+            separatorBuilder: (context, index) =>
+                const SizedBox(height: AppSize.s8),
+          ),
+        ],
       ),
     );
   }

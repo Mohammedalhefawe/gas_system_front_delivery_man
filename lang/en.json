@@ -230,5 +230,10 @@
   "UnknownUser": "Unknown User",
   "NoNewOrdersPrompt": "There are no new orders available at the moment.",
   "NewOrders": "New Orders",
-  "Reject":"Reject"
+  "Reject":"Reject",
+    "Notifications": "Notifications",
+  "FailedToLoadNotifications": "Failed to load notifications",
+  "NoNotifications": "No notifications",
+  "Today":"Today",
+  "Yesterday":"Yesterday"
 }

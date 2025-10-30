@@ -1,114 +1,139 @@
-// import 'package:flutter/widgets.dart';
-// import 'package:get/get.dart';
-// import 'package:gas_delivery_app/data/dto/get_notifications_dto.dart';
-// import 'package:gas_delivery_app/data/models/notification_model.dart';
-// import 'package:gas_delivery_app/data/enums/loading_state_enum.dart';
-// import 'package:gas_delivery_app/presentation/custom_widgets/custom_toasts.dart';
-// import '../../../data/repos/notification_repo.dart';
+import 'package:flutter/widgets.dart';
+import 'package:gas_delivery_app/data/repos/orders_repo.dart';
+import 'package:gas_delivery_app/presentation/pages/order_details_page/order_details_page.dart';
+import 'package:get/get.dart';
+import 'package:gas_delivery_app/data/enums/loading_state_enum.dart';
+import 'package:gas_delivery_app/data/models/notification_model.dart';
+import 'package:gas_delivery_app/data/repos/notification_repo.dart';
+import 'package:gas_delivery_app/presentation/custom_widgets/custom_toasts.dart';
 
-// class NotificationsPageController extends GetxController {
-//   final NotificationRepo notificationsRepo = Get.find<NotificationRepo>();
+class NotificationsPageController extends GetxController {
+  final NotificationRepo notificationsRepo = Get.find<NotificationRepo>();
+  final OrderRepo orderRepo = Get.find<OrderRepo>();
+  RxList<NotificationModel> notifications = <NotificationModel>[].obs;
+  final loadingNotificationsState = LoadingState.idle.obs;
+  final loadingMoreNotificationsState = LoadingState.idle.obs;
+  final currentPage = 1.obs;
+  final lastPage = 1.obs;
+  final hasMorePages = false.obs;
+  final ScrollController scrollController = ScrollController();
 
-//   RxList<NotificationModel> notifications = <NotificationModel>[].obs;
+  @override
+  void onInit() {
+    fetchNotifications(page: 1);
+    scrollController.addListener(scrollListener);
+    super.onInit();
+  }
 
-//   final currentPage = 1.obs;
-//   final lastPage = 1.obs;
-//   final hasMorePages = false.obs;
+  @override
+  void onClose() {
+    scrollController.dispose();
+    super.onClose();
+  }
 
-//   final loadingNotificationsState = LoadingState.idle.obs;
-//   final loadingMoreNotificationsState = LoadingState.idle.obs;
+  void scrollListener() {
+    if (scrollController.position.pixels >=
+        scrollController.position.maxScrollExtent * 0.8) {
+      loadMoreNotifications();
+    }
+  }
 
-//   final ScrollController scrollController = ScrollController();
+  Future<void> fetchNotifications({
+    required int page,
+    int pageSize = 10,
+  }) async {
+    if (loadingNotificationsState.value == LoadingState.loading) return;
+    loadingNotificationsState.value = LoadingState.loading;
 
-//   @override
-//   void onInit() {
-//     getNotifications(page: 1);
-//     scrollController.addListener(scrollListener);
-//     super.onInit();
-//   }
+    final response = await notificationsRepo.getNotifications(
+      page: page,
+      pageSize: pageSize,
+    );
 
-//   @override
-//   void onClose() {
-//     scrollController.dispose();
-//     super.onClose();
-//   }
+    if (!response.success || response.data == null) {
+      loadingNotificationsState.value = LoadingState.hasError;
+      CustomToasts(
+        message:
+            response.networkFailure?.message ??
+            "Failed to load notifications".tr,
+        type: CustomToastType.error,
+      ).show();
+      return;
+    }
 
-//   Future<void> refreshNotifications() async {
-//     notifications.clear();
-//     currentPage.value = 1;
-//     lastPage.value = 1;
-//     hasMorePages.value = false;
-//     loadingNotificationsState.value = LoadingState.idle;
-//     loadingMoreNotificationsState.value = LoadingState.idle;
-//     await getNotifications(page: 1);
-//   }
+    if (page == 1) {
+      notifications.clear();
+    }
+    notifications.addAll(response.data!.data);
+    currentPage.value = response.data!.currentPage;
+    lastPage.value = response.data!.lastPage;
+    hasMorePages.value = currentPage.value < lastPage.value;
 
-//   Future<void> getNotifications({required int page, int pageSize = 10}) async {
-//     if (loadingNotificationsState.value == LoadingState.loading) return;
-//     loadingNotificationsState.value = LoadingState.loading;
+    loadingNotificationsState.value = notifications.isEmpty
+        ? LoadingState.doneWithNoData
+        : LoadingState.doneWithData;
+  }
 
-//     final response = await notificationsRepo.getNotifications(
-//       GetNotificationsDto(page: page, perPage: pageSize),
-//     );
+  Future<void> loadMoreNotifications() async {
+    if (loadingMoreNotificationsState.value == LoadingState.loading ||
+        !hasMorePages.value) {
+      return;
+    }
 
-//     if (!response.success || response.data == null) {
-//       loadingNotificationsState.value = LoadingState.hasError;
-//       CustomToasts(
-//         message: response.networkFailure?.message ?? "حدث خطأ ما".tr,
-//         type: CustomToastType.error,
-//       ).show();
-//       return;
-//     }
+    loadingMoreNotificationsState.value = LoadingState.loading;
 
-//     if (page == 1) {
-//       notifications.clear();
-//     }
-//     notifications.addAll(response.data!.data);
-//     currentPage.value = response.data!.currentPage;
-//     lastPage.value = response.data!.lastPage;
-//     hasMorePages.value = currentPage.value < lastPage.value;
+    final nextPage = currentPage.value + 1;
+    final response = await notificationsRepo.getNotifications(page: nextPage);
 
-//     loadingNotificationsState.value = notifications.isEmpty
-//         ? LoadingState.doneWithNoData
-//         : LoadingState.doneWithData;
-//   }
+    if (!response.success || response.data == null) {
+      loadingMoreNotificationsState.value = LoadingState.hasError;
+      return;
+    }
 
-//   Future<void> loadMoreNotifications() async {
-//     if (loadingMoreNotificationsState.value == LoadingState.loading ||
-//         !hasMorePages.value) {
-//       return;
-//     }
+    notifications.addAll(response.data!.data);
+    currentPage.value = response.data!.currentPage;
+    lastPage.value = response.data!.lastPage;
+    hasMorePages.value = currentPage.value < lastPage.value;
 
-//     loadingMoreNotificationsState.value = LoadingState.loading;
+    loadingMoreNotificationsState.value = LoadingState.doneWithData;
+  }
 
-//     final nextPage = currentPage.value + 1;
-//     final response = await notificationsRepo.getNotifications(
-//       GetNotificationsDto(page: nextPage, perPage: 10),
-//     );
+  Future<void> refreshNotifications() async {
+    notifications.clear();
+    currentPage.value = 1;
+    lastPage.value = 1;
+    hasMorePages.value = false;
+    loadingNotificationsState.value = LoadingState.idle;
+    loadingMoreNotificationsState.value = LoadingState.idle;
+    await fetchNotifications(page: 1);
+  }
 
-//     if (!response.success || response.data == null) {
-//       loadingMoreNotificationsState.value = LoadingState.hasError;
-//       CustomToasts(
-//         message: response.networkFailure?.message ?? "حدث خطأ ما".tr,
-//         type: CustomToastType.error,
-//       ).show();
-//       return;
-//     }
+  Future<void> markNotificationAsRead(int notificationId) async {
+    final response = await notificationsRepo.markNotificationAsRead(
+      notificationId,
+    );
 
-//     notifications.addAll(response.data!.data);
-//     currentPage.value = response.data!.currentPage;
-//     lastPage.value = response.data!.lastPage;
-//     hasMorePages.value = currentPage.value < lastPage.value;
+    if (!response.success) {
+      CustomToasts(
+        message:
+            response.networkFailure?.message ??
+            "Failed to mark notification as read".tr,
+        type: CustomToastType.error,
+      ).show();
+      return;
+    }
 
-//     loadingMoreNotificationsState.value = LoadingState.doneWithData;
-//   }
-
-//   void scrollListener() {
-//     if (scrollController.position.pixels >=
-//         scrollController.position.maxScrollExtent * 0.8) {
-//       loadMoreNotifications();
-//     }
-//   }
-
-//   void onNotificationTap(NotificationModel notification) {}
-// }
+    // Update the notification's isRead status locally
+    final index = notifications.indexWhere(
+      (n) => n.notificationId == notificationId,
+    );
+    if (index != -1) {
+      notifications[index] = notifications[index].copyWith(isRead: true);
+      notifications.refresh(); // Trigger reactive update
+      Get.to(
+        () => DriverOrderDetailsPage(),
+        arguments: notifications[index].relatedOrderId,
+      );
+    }
+  }
+}
