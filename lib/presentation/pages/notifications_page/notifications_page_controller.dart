@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:gas_delivery_app/data/repos/orders_repo.dart';
+import 'package:gas_delivery_app/presentation/pages/main_page/main_page_controller.dart';
 import 'package:gas_delivery_app/presentation/pages/order_details_page/order_details_page.dart';
 import 'package:get/get.dart';
 import 'package:gas_delivery_app/data/enums/loading_state_enum.dart';
@@ -17,6 +18,7 @@ class NotificationsPageController extends GetxController {
   final lastPage = 1.obs;
   final hasMorePages = false.obs;
   final ScrollController scrollController = ScrollController();
+  MainController? mainController;
 
   @override
   void onInit() {
@@ -129,7 +131,11 @@ class NotificationsPageController extends GetxController {
     );
     if (index != -1) {
       notifications[index] = notifications[index].copyWith(isRead: true);
-      notifications.refresh(); // Trigger reactive update
+      notifications.refresh();
+      if (Get.isRegistered<MainController>()) {
+        mainController ??= Get.find<MainController>();
+        mainController!.notificationsCount.value--;
+      }
       Get.to(
         () => DriverOrderDetailsPage(),
         arguments: notifications[index].relatedOrderId,

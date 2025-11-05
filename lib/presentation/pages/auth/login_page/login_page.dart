@@ -70,10 +70,9 @@ class InputLogin extends GetView<LoginPageController> {
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: Colors.black12.withValues(alpha: 0.12),
-              offset: Offset(0, 2),
-              spreadRadius: 1,
-              blurRadius: 3,
+              color: ColorManager.colorBlack.withValues(alpha: 0.05),
+              blurRadius: 16,
+              offset: const Offset(0, 4),
             ),
           ],
         ),

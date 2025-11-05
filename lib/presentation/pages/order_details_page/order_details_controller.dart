@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:gas_delivery_app/data/enums/loading_state_enum.dart';
+import 'package:gas_delivery_app/data/enums/order_status_enum.dart';
 import 'package:gas_delivery_app/data/models/address_model.dart';
 import 'package:gas_delivery_app/data/models/order_model.dart';
 import 'package:gas_delivery_app/data/repos/orders_repo.dart';
@@ -13,7 +14,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 class DriverOrderDetailsController extends GetxController {
   final OrderRepo orderRepo = Get.find<OrderRepo>();
   late int orderId;
-  final order = Rxn<OrderModel>();
+  final Rxn<OrderModel> order = Rxn<OrderModel>();
   final loadingState = LoadingState.doneWithData.obs;
 
   @override
@@ -51,7 +52,7 @@ class DriverOrderDetailsController extends GetxController {
       ).show();
       return;
     }
-    order.value!.copyWith(orderStatus: 'accepted');
+    order.value!.copyWith(orderStatus: OrderStatus.accepted);
     loadingState.value = LoadingState.doneWithData;
     CustomToasts(
       message: response.successMessage ?? 'OrderAccepted'.tr,
@@ -135,7 +136,7 @@ class DriverOrderDetailsController extends GetxController {
       ).show();
       return;
     }
-    order.value!.copyWith(orderStatus: 'on_the_way');
+    order.value!.copyWith(orderStatus: OrderStatus.onTheWay);
 
     loadingState.value = LoadingState.doneWithData;
     CustomToasts(
@@ -155,7 +156,7 @@ class DriverOrderDetailsController extends GetxController {
       ).show();
       return;
     }
-    order.value!.copyWith(orderStatus: 'completed');
+    order.value!.copyWith(orderStatus: OrderStatus.completed);
 
     loadingState.value = LoadingState.doneWithData;
     CustomToasts(

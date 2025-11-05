@@ -24,7 +24,6 @@ class DriverOrdersController extends GetxController {
   final currentTab = 0.obs;
   final ScrollController myOrdersScrollController = ScrollController();
   final ScrollController newOrdersScrollController = ScrollController();
-
   @override
   void onInit() {
     super.onInit();

@@ -1,4 +1,3 @@
-import 'package:dio/dio.dart' as dio;
 import 'package:gas_delivery_app/core/services/network_service/api.dart';
 import 'package:gas_delivery_app/core/services/network_service/error_handler.dart';
 import 'package:gas_delivery_app/core/services/network_service/remote_api_service.dart';

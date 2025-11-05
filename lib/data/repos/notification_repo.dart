@@ -6,6 +6,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:gas_delivery_app/data/models/paginated_model.dart';
+import 'package:gas_delivery_app/presentation/pages/main_page/main_page_controller.dart';
 import 'package:gas_delivery_app/presentation/pages/order_details_page/order_details_page.dart';
 import 'package:get/get.dart';
 import 'package:gas_delivery_app/core/services/cache_service.dart';
@@ -27,6 +28,7 @@ class NotificationRepo {
   ApiService apiService = Get.find<ApiService>();
   CacheService cacheService = Get.find<CacheService>();
   UsersRepo usersRepo = Get.find<UsersRepo>();
+  MainController? mainController;
 
   final _firebaseMessaging = FirebaseMessaging.instance;
   final _flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
@@ -52,6 +54,10 @@ class NotificationRepo {
       }
 
       FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+        if (Get.isRegistered<MainController>()) {
+          mainController ??= Get.find<MainController>();
+          mainController!.notificationsCount.value++;
+        }
         debugPrint('Foreground message: ${message.data}');
         if (message.notification != null) {
           _showLocalizedNotification(message);
@@ -194,6 +200,30 @@ class NotificationRepo {
       debugPrint("Error sending FCM token: ${e.toString()}");
       appResponse.networkFailure = ErrorHandler.handle(e).failure;
     }
+    return appResponse;
+  }
+
+  Future<AppResponse> getUnreadNotificationsCount() async {
+    AppResponse appResponse = AppResponse(success: false);
+
+    try {
+      final response = await apiService.request(
+        url: "${Api.notifications}/unread-count",
+        method: Method.get,
+        requiredToken: true,
+        withLogging: true,
+      );
+
+      appResponse.success = true;
+      appResponse.data = response.data?['data']?['unread_count'] ?? 0;
+
+      appResponse.successMessage = "Unread notifications count retrieved";
+    } catch (e) {
+      appResponse.success = false;
+      appResponse.networkFailure = ErrorHandler.handle(e).failure;
+      debugPrint("Error getting unread notifications count: ${e.toString()}");
+    }
+
     return appResponse;
   }
 

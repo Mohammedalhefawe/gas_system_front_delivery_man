@@ -7,7 +7,7 @@ import 'package:gas_delivery_app/presentation/util/resources/assets.gen.dart';
 import 'package:gas_delivery_app/presentation/util/resources/color_manager.dart';
 import 'package:gas_delivery_app/presentation/util/resources/navigation_manager.dart';
 import 'package:gas_delivery_app/presentation/util/resources/values_manager.dart';
-// import 'package:badges/badges.dart' as badges;
+import 'package:badges/badges.dart' as badges;
 
 class MainPage extends GetView<MainController> {
   const MainPage({super.key});
@@ -57,8 +57,18 @@ class MainPageAppBar extends GetView<MainController>
               onTap: () async {
                 Get.toNamed(AppRoutes.notificationRoute);
               },
-              child: Assets.icons.notificationIcon.svg(
-                width: AppSize.sWidth * 0.065,
+              child: badges.Badge(
+                showBadge: controller.notificationsCount.value != 0,
+                position: badges.BadgePosition.topStart(),
+                badgeContent: Text(
+                  controller.notificationsCount.value.toString(),
+                  style: Get.textTheme.labelSmall!.copyWith(
+                    color: ColorManager.colorWhite,
+                  ),
+                ),
+                child: Assets.icons.notificationIcon.svg(
+                  width: AppSize.sWidth * 0.065,
+                ),
               ),
             ),
             SizedBox(width: AppSize.sWidth * 0.06),
@@ -72,25 +82,26 @@ class MainPageAppBar extends GetView<MainController>
           automaticallyImplyLeading: false,
           title: Text('account'.tr, style: Get.textTheme.titleLarge),
           actions: [
-            SizedBox(width: AppSize.sWidth * 0.035),
+            SizedBox(width: AppSize.sWidth * 0.06),
             InkWell(
               onTap: () async {
-                if (controller.cacheService.isLoggedIn()) {
-                  // Get.toNamed(AppRoutes.notificationsRoute);
-                } else {
-                  Get.toNamed(AppRoutes.loginRoute);
-                }
+                Get.toNamed(AppRoutes.notificationRoute);
               },
-              child: Assets.icons.notificationIcon.svg(
-                width: AppSize.sWidth * 0.065,
+              child: badges.Badge(
+                showBadge: controller.notificationsCount.value != 0,
+                position: badges.BadgePosition.topStart(),
+                badgeContent: Text(
+                  controller.notificationsCount.value.toString(),
+                  style: Get.textTheme.labelSmall!.copyWith(
+                    color: ColorManager.colorWhite,
+                  ),
+                ),
+                child: Assets.icons.notificationIcon.svg(
+                  width: AppSize.sWidth * 0.065,
+                ),
               ),
             ),
-            SizedBox(width: AppSize.sWidth * 0.035),
-            InkWell(
-              onTap: () {},
-              child: Assets.icons.supportIcon.svg(width: AppSize.sWidth * 0.06),
-            ),
-            SizedBox(width: AppSize.sWidth * 0.035),
+            SizedBox(width: AppSize.sWidth * 0.06),
           ],
         );
       }
@@ -164,81 +175,6 @@ class MainPageNavBar extends GetView<MainController> {
     });
   }
 }
-
-// class MainPageButton extends GetView<MainController> {
-//   const MainPageButton({super.key});
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Obx(() {
-//       return AnimatedSwitcher(
-//         duration: const Duration(milliseconds: 120),
-//         transitionBuilder: (child, animation) {
-//           final curvedAnimation = CurvedAnimation(
-//             parent: animation,
-//             curve: Curves.easeInOut,
-//           );
-//           final inOffsetAnimation = Tween<Offset>(
-//             begin: const Offset(0, 0.4),
-//             end: Offset.zero,
-//           ).animate(curvedAnimation);
-//           final outOffsetAnimation = Tween<Offset>(
-//             begin: Offset.zero,
-//             end: const Offset(0, -0.4),
-//           ).animate(curvedAnimation);
-//           final offsetAnimation = animation.status == AnimationStatus.reverse
-//               ? outOffsetAnimation
-//               : inOffsetAnimation;
-
-//           return SlideTransition(
-//             position: offsetAnimation,
-//             child: FadeTransition(opacity: animation, child: child),
-//           );
-//         },
-//         child: controller.showNavBar.value
-//             ? InkWell(
-//                 key: const ValueKey('AddAdsButton'),
-//                 onTap: () async {
-//                   // if (await controller.usersRepo.checkLoggedInAndShowDialog()) {
-//                   //   // Get.toNamed(AppRoutes.addAdsRoute);
-//                   // }
-//                 },
-//                 child: Container(
-//                   width: AppSize.sWidth * 0.155,
-//                   padding: EdgeInsets.all(AppSize.sWidth * 0.035),
-//                   decoration: BoxDecoration(
-//                     color: ColorManager.colorPrimary,
-//                     shape: BoxShape.circle,
-//                   ),
-//                   child: Assets.icons.cameraAddIcon.svg(
-//                     colorFilter: const ColorFilter.mode(
-//                       ColorManager.colorWhite,
-//                       BlendMode.srcIn,
-//                     ),
-//                     width: AppSize.sWidth * 0.067,
-//                   ),
-//                 ),
-//               )
-//             : Container(
-//                 margin: EdgeInsets.only(bottom: AppSize.sHeight * 0.025),
-//                 key: const ValueKey('AppButton'),
-//                 width: Get.width * 0.5,
-//                 child: AppButton(
-//                   onPressed: () async {},
-//                   text: "add_ads".tr,
-//                   icon: Assets.icons.cameraAddIcon.svg(
-//                     width: AppSize.s28,
-//                     colorFilter: const ColorFilter.mode(
-//                       ColorManager.colorWhite,
-//                       BlendMode.srcIn,
-//                     ),
-//                   ),
-//                 ),
-//               ),
-//       );
-//     });
-//   }
-// }
 
 class NavBarItem {
   final String name;

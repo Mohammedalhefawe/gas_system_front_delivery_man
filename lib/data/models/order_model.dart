@@ -1,3 +1,4 @@
+import 'package:gas_delivery_app/data/enums/order_status_enum.dart';
 import 'package:gas_delivery_app/data/models/address_model.dart';
 import 'package:gas_delivery_app/data/models/customer_model.dart';
 import 'package:gas_delivery_app/data/models/product_model.dart';
@@ -9,7 +10,7 @@ class OrderModel {
   final int addressId;
   final String totalAmount;
   final String deliveryFee;
-  final String orderStatus;
+  final OrderStatus orderStatus;
   final String orderDate;
   final String? deliveryDate;
   final String? deliveryTime;
@@ -30,7 +31,7 @@ class OrderModel {
     this.addressId = 0,
     this.totalAmount = "",
     this.deliveryFee = "",
-    this.orderStatus = "",
+    required this.orderStatus,
     this.orderDate = "",
     this.deliveryDate,
     this.deliveryTime,
@@ -53,7 +54,7 @@ class OrderModel {
       addressId: json['address_id'] ?? 0,
       totalAmount: json['total_amount'] ?? "",
       deliveryFee: json['delivery_fee'] ?? "",
-      orderStatus: json['order_status'] ?? "",
+      orderStatus: _parseOrderStatus(json['order_status']),
       orderDate: json['order_date'] ?? "",
       deliveryDate: json['delivery_date'],
       deliveryTime: json['delivery_time'],
@@ -73,6 +74,18 @@ class OrderModel {
           ? CustomerModel.fromJson(json['customer'])
           : null,
     );
+  }
+
+  static OrderStatus _parseOrderStatus(dynamic value) {
+    if (value == null) return OrderStatus.pending;
+    if (value is int) return OrderStatus.fromValue(value);
+    if (value is String) {
+      return OrderStatus.values.firstWhere(
+        (status) => status.translationKey == value,
+        orElse: () => OrderStatus.pending,
+      );
+    }
+    return OrderStatus.pending;
   }
 
   Map<String, dynamic> toJson() {
@@ -105,7 +118,7 @@ class OrderModel {
     int? addressId,
     String? totalAmount,
     String? deliveryFee,
-    String? orderStatus,
+    OrderStatus? orderStatus,
     String? orderDate,
     String? deliveryDate,
     String? deliveryTime,
