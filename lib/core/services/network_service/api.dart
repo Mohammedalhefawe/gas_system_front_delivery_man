@@ -1,5 +1,5 @@
 abstract class Api {
-  static const String imageBaseUrl = "http://10.0.2.2:8000/storage/";
+  static const String imageBaseUrl = "http://165.227.133.66/storage/";
 
   /// Authentication
   static const String register = "auth/register/customer";
